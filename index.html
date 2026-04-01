@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>鼠鼠大作戰 - 老年腦力訓練</title>
+    <style>
+        /* --- 1. CSS 變數與基礎樣式 --- */
+        :root {
+            --bg: #000000;
+            --text: #FFFF00; /* 高對比黃色 */
+            --accent: #FFCC00;
+            --card-bg: #1A1A1A;
+            --font-main: 24px;
+            --grid-size: 5;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'PingFang HK', 'Microsoft JhengHei', sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- 2. 佈局與導航 --- */
+        header {
+            width: 100%;
+            padding: 10px;
+            background: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .view { display: none; width: 95%; max-width: 800px; padding: 20px; text-align: center; }
+        .view.active { display: block; animation: fadeIn 0.3s; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- 3. 網格系統 (5x5 to 10x10) --- */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(var(--grid-size), 1fr);
+            gap: 5px;
+            width: 90vw;
+            max-width: 500px;
+            aspect-ratio: 1/1;
+            margin: 20px auto;
+        }
+
+        .cell {
+            background: #444;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            cursor: pointer;
+            user-select: none;
+            transition: 0.1s;
+        }
+
+        .cell.active { background: #FFFDE7; }
+        .cell.path { background: #FFEB3B; } /* 記憶路徑顏色 */
+        .cell.correct { background: #4CAF50; }
+        .cell.wrong { background: #F44336; }
+
+        /* --- 4. 按鈕與介面 --- */
+        button {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 10px;
+            margin: 10px;
+            cursor: pointer;
+        }
+
+        .menu-card {
+            background: var(--card-bg);
+            border: 3px solid var(--accent);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 15px;
+        }
+
+        .stat-bar { font-size: 1.8rem; margin: 10px 0; }
+        .target-box { border: 2px solid white; padding: 5px; display: inline-block; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div id="user-display">👤 <span id="current-player-name">--</span></div>
+    <div>
+        <button onclick="toggleLang()" style="padding: 5px 10px; font-size: 1rem;">ZH/EN</button>
+        <button onclick="showView('settings')" style="padding: 5px 10px; font-size: 1rem;">⚙️</button>
+    </div>
+</header>
+
+<section id="view-home" class="view active">
+    <h1 class="lang" data-zh="鼠鼠大作戰" data-en="Mouse Battles">鼠鼠大作戰</h1>
+    <div class="menu-card" onclick="startWhackGame()">
+        <h2>⚡ <span class="lang" data-zh="捕鼠特攻" data-en="Rat Catcher">捕鼠特攻</span></h2>
+        <p class="lang" data-zh="看到老鼠就點擊！" data-en="Click when you see the Rat!">看到老鼠就點擊！</p>
+    </div>
+    <div class="menu-card" onclick="startMazeGame()">
+        <h2>🧠 <span class="lang" data-zh="老鼠迷蹤" data-en="Mouse Maze">老鼠迷蹤</span></h2>
+        <p class="lang" data-zh="記住老鼠逃跑的路徑" data-en="Remember the escape path">記住老鼠逃跑的路徑</p>
+    </div>
+</section>
+
+<section id="view-game1" class="view">
+    <div class="stat-bar">
+        <span class="lang" data-zh="目標:" data-en="Target:">目標:</span> <span id="g1-target" class="target-box">🐀</span> | 
+        <span class="lang" data-zh="得分:" data-en="Score:">得分:</span> <span id="g1-score">0</span>
+    </div>
+    <div id="g1-grid" class="game-grid"></div>
+    <button onclick="showView('home')">Back</button>
+</section>
+
+<section id="view-game2" class="view">
+    <div class="stat-bar">
+        <span id="maze-status" class="lang" data-zh="準備好嗎？" data-en="Ready?">準備好嗎？</span>
+        <div id="g2-level">Level: 5x5</div>
+    </div>
+    <div id="g2-grid" class="game-grid"></div>
+    <button onclick="showView('home')">Back</button>
+</section>
+
+<section id="view-settings" class="view">
+    <h2 class="lang" data-zh="玩家管理" data-en="Users">玩家管理</h2>
+    <input type="text" id="new-user-name" placeholder="Name" style="font-size: 1.5rem;">
+    <button onclick="addUser()" class="lang" data-zh="新增玩家" data-en="Add User">新增玩家</button>
+    <div id="user-list"></div>
+    <button onclick="showView('home')">Back</button>
+</section>
+
+<script>
+/* --- 5. JavaScript 遊戲邏輯 --- */
+
+let state = {
+    lang: 'zh',
+    currentUser: null,
+    users: JSON.parse(localStorage.getItem('mouse_users') || '[]'),
+    view: 'home'
+};
+
+// --- 初始化 ---
+function init() {
+    if (state.users.length === 0) {
+        state.users.push({ name: 'Default', g1: 0, g2: 0 });
+    }
+    state.currentUser = state.users[0];
+    updateUI();
+    showView('home');
+}
+
+function updateUI() {
+    document.getElementById('current-player-name').innerText = state.currentUser.name;
+    document.querySelectorAll('.lang').forEach(el => {
+        el.innerText = el.getAttribute(`data-${state.lang}`);
+    });
+}
+
+function toggleLang() {
+    state.lang = state.lang === 'zh' ? 'en' : 'zh';
+    updateUI();
+}
+
+function showView(id) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(`view-${id}`).classList.add('active');
+    if(id !== 'game1' && id !== 'game2') stopAllTimers();
+}
+
+// --- 用戶管理 ---
+function addUser() {
+    const name = document.getElementById('new-user-name').value;
+    if(!name) return;
+    state.users.push({ name, g1: 0, g2: 0 });
+    save();
+    renderUserList();
+}
+
+function renderUserList() {
+    const list = document.getElementById('user-list');
+    list.innerHTML = state.users.map((u, i) => `
+        <div class="menu-card" onclick="selectUser(${i})">
+            ${u.name} (Best: ${u.g1} / ${u.g2})
+        </div>
+    `).join('');
+}
+
+function selectUser(i) {
+    state.currentUser = state.users[i];
+    updateUI();
+    showView('home');
+}
+
+function save() {
+    localStorage.setItem('mouse_users', JSON.stringify(state.users));
+}
+
+// --- 遊戲 1：捕鼠特攻 (Reaction) ---
+let g1Interval;
+function startWhackGame() {
+    showView('game1');
+    let score = 0;
+    let gridSize = 5;
+    let speed = 1200;
+    const animals = ['🐀', '🐀', '🐀', '🐹', '🐰', '🐥']; // 增加老鼠機率
+    
+    document.getElementById('g1-score').innerText = score;
+    const grid = document.getElementById('g1-grid');
+    
+    function refreshGrid() {
+        grid.style.setProperty('--grid-size', gridSize);
+        grid.innerHTML = '';
+        for(let i=0; i<gridSize*gridSize; i++) {
+            const c = document.createElement('div');
+            c.className = 'cell';
+            c.onclick = () => {
+                if(c.innerText === '🐀') {
+                    score += 10;
+                    document.getElementById('g1-score').innerText = score;
+                    c.innerText = '💥';
+                    if(score % 50 === 0 && gridSize < 10) gridSize++; 
+                    if(score % 30 === 0) speed *= 0.9;
+                }
+            };
+            grid.appendChild(c);
+        }
+    }
+
+    refreshGrid();
+    g1Interval = setInterval(() => {
+        const cells = document.querySelectorAll('#g1-grid .cell');
+        cells.forEach(c => c.innerText = '');
+        const rand = Math.floor(Math.random() * cells.length);
+        cells[rand].innerText = animals[Math.floor(Math.random()*animals.length)];
+    }, speed);
+}
+
+// --- 遊戲 2：老鼠迷蹤 (Memory) ---
+let mazePath = [];
+let playerStep = 0;
+function startMazeGame() {
+    showView('game2');
+    let size = 5;
+    let stepCount = 5;
+    
+    async function nextLevel() {
+        document.getElementById('g2-level').innerText = `Level: ${size}x${size}`;
+        const grid = document.getElementById('g2-grid');
+        grid.style.setProperty('--grid-size', size);
+        grid.innerHTML = '';
+        const cells = [];
+        for(let i=0; i<size; i++){
+            cells[i] = [];
+            for(let j=0; j<size; j++){
+                const c = document.createElement('div');
+                c.className = 'cell';
+                c.dataset.pos = `${i}-${j}`;
+                grid.appendChild(c);
+                cells[i][j] = c;
+            }
+        }
+
+        // 生成不回頭路徑 (DFS 簡化版)
+        mazePath = [];
+        let curr = {x:0, y:0};
+        mazePath.push("0-0");
+        for(let s=0; s<stepCount; s++) {
+            let nexts = [
+                {x:curr.x+1, y:curr.y}, {x:curr.x-1, y:curr.y},
+                {x:curr.x, y:curr.y+1}, {x:curr.x, y:curr.y-1}
+            ].filter(p => p.x>=0 && p.x<size && p.y>=0 && p.y<size && !mazePath.includes(`${p.x}-${p.y}`));
+            
+            if(nexts.length === 0) break;
+            curr = nexts[Math.floor(Math.random()*nexts.length)];
+            mazePath.push(`${curr.x}-${curr.y}`);
+        }
+
+        // 展示路徑
+        document.getElementById('maze-status').innerText = state.lang === 'zh' ? '記住路徑...' : 'Memorize...';
+        for(let p of mazePath) {
+            let cell = document.querySelector(`[data-pos="${p}"]`);
+            cell.innerText = '🐀';
+            cell.classList.add('path');
+            await new Promise(r => setTimeout(r, 600));
+            cell.innerText = '';
+            cell.classList.remove('path');
+        }
+
+        // 玩家輸入
+        document.getElementById('maze-status').innerText = state.lang === 'zh' ? '請重畫！' : 'Your turn!';
+        playerStep = 0;
+        document.querySelectorAll('#g2-grid .cell').forEach(c => {
+            c.onclick = () => {
+                if(c.dataset.pos === mazePath[playerStep]) {
+                    c.classList.add('correct');
+                    playerStep++;
+                    if(playerStep === mazePath.length) {
+                        alert("Success!");
+                        stepCount++;
+                        if(stepCount % 3 === 0 && size < 10) size++;
+                        nextLevel();
+                    }
+                } else {
+                    c.classList.add('wrong');
+                    alert("Wrong! Try again.");
+                    nextLevel();
+                }
+            };
+        });
+    }
+    nextLevel();
+}
+
+function stopAllTimers() {
+    clearInterval(g1Interval);
+}
+
+window.onload = init;
+renderUserList();
+</script>
+</body>
+</html>
