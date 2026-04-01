@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>鼠鼠大作戰 - 專業長者版</title>
+    <title>鼠鼠大作戰 - 即時調整版</title>
     <style>
         :root {
             --bg: #000;
@@ -24,93 +24,114 @@
             min-height: 100vh;
         }
 
-        header { width: 100%; padding: 15px; background: #222; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
-        .view { display: none; width: 95%; max-width: 600px; padding: 20px; text-align: center; box-sizing: border-box; }
+        header { 
+            width: 100%; padding: 12px; background: #222; 
+            display: flex; justify-content: space-between; align-items: center; 
+            box-sizing: border-box; border-bottom: 2px solid var(--accent);
+        }
+
+        .view { display: none; width: 95%; max-width: 600px; padding: 15px; text-align: center; box-sizing: border-box; }
         .view.active { display: block; }
+
+        /* --- 即時控制面板 (在遊戲畫面中) --- */
+        .live-controls {
+            background: #1A1A1A; padding: 10px; border-radius: 12px; 
+            margin: 10px 0; border: 1px solid var(--accent);
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .control-row { display: flex; justify-content: center; align-items: center; gap: 15px; font-size: 1.1rem; }
+
+        .progress-wrapper { 
+            width: 100%; background: #333; border-radius: 20px; height: 20px; 
+            margin: 10px 0; border: 1px solid var(--accent); overflow: hidden; position: relative; 
+        }
+        .bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+        .progress-text { position: absolute; width: 100%; text-align: center; color: #fff; font-size: 12px; font-weight: bold; line-height: 20px; z-index: 2; }
 
         .game-grid {
             display: grid;
             grid-template-columns: repeat(var(--grid-size), 1fr);
             grid-template-rows: repeat(var(--grid-size), 1fr);
-            gap: 6px; width: var(--grid-px); height: var(--grid-px);
-            margin: 20px auto; background: #222; padding: 10px; border-radius: 10px;
+            gap: 5px; width: var(--grid-px); height: var(--grid-px);
+            margin: 5px auto; background: #222; padding: 8px; border-radius: 10px;
         }
 
         .cell {
             background: #333; border-radius: 8px; display: flex; justify-content: center; align-items: center;
-            cursor: pointer; font-size: calc(var(--grid-px) / var(--grid-size) * 0.65);
+            cursor: pointer; font-size: calc(var(--grid-px) / var(--grid-size) * 0.6);
         }
-
         .cell.correct { background: #4CAF50 !important; }
         .cell.wrong { background: #F44336 !important; }
-        @keyframes hitZoom { 0% { transform: scale(1); } 50% { transform: scale(2.2); background: #FFF; color: #000; } 100% { transform: scale(1); } }
-        .hit-effect { animation: hitZoom 0.4s forwards; }
+        @keyframes hit { 0% { transform: scale(1); } 50% { transform: scale(1.8); background: #FFF; } 100% { transform: scale(1); } }
+        .hit-effect { animation: hit 0.3s forwards; }
 
-        button { background: var(--accent); color: #000; border: none; padding: 15px 25px; font-size: 1.4rem; font-weight: bold; border-radius: 12px; margin: 10px; cursor: pointer; }
-        .profile-item { background: #1A1A1A; border: 2px solid var(--accent); padding: 15px; margin: 10px 0; border-radius: 10px; font-size: 1.5rem; }
-        .rule-box { text-align: left; background: #111; padding: 20px; border-radius: 12px; border-left: 6px solid var(--accent); line-height: 1.6; margin: 15px 0; font-size: 1.2rem; }
-        .config-panel { background: #222; padding: 20px; border-radius: 12px; margin: 15px 0; }
-        .hearts { font-size: 2.2rem; color: #ff4444; }
+        button { background: var(--accent); color: #000; border: none; padding: 12px 20px; font-size: 1.2rem; font-weight: bold; border-radius: 10px; margin: 5px; cursor: pointer; }
+        .profile-item { background: #111; border: 2px solid var(--accent); padding: 15px; margin: 10px 0; border-radius: 10px; font-size: 1.4rem; }
+        .hearts { font-size: 2rem; color: #ff4444; }
+        input[type=range] { width: 150px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <header>
     <div id="top-user-name">👤 <span id="current-name-display">---</span></div>
-    <button onclick="toggleLanguage()" style="font-size: 0.9rem;">ZH/EN</button>
+    <button onclick="toggleLanguage()" style="font-size: 0.8rem; padding: 5px 10px;">ZH/EN</button>
 </header>
 
 <section id="view-profile" class="view active">
     <h1>鼠鼠訓練營</h1>
     <div id="user-list-container"></div>
-    <input type="text" id="name-input" placeholder="New Name" style="font-size: 1.4rem; padding: 10px; width: 60%;">
-    <button onclick="handleCreateUser()">新增</button>
+    <div style="margin-top: 20px;">
+        <input type="text" id="name-input" placeholder="Name" style="font-size: 1.2rem; padding: 8px; width: 50%;">
+        <button onclick="handleCreateUser()">新增</button>
+    </div>
 </section>
 
 <section id="view-lobby" class="view">
-    <h2 class="lang" data-zh="請選擇訓練項目" data-en="Select Training">請選擇訓練項目</h2>
-    <button onclick="showConfig(1)" style="width: 85%;">⚡ <span class="lang" data-zh="捕鼠特攻" data-en="Rat Catcher">捕鼠特攻</span></button>
-    <button onclick="showConfig(2)" style="width: 85%;">🧠 <span class="lang" data-zh="老鼠迷蹤" data-en="Mouse Maze">老鼠迷蹤</span></button>
-</section>
-
-<section id="view-config" class="view">
-    <h2 id="config-title">遊戲設定</h2>
-    <div class="rule-box" id="config-rules"></div>
-    
-    <div class="config-panel">
-        <label style="font-size: 1.5rem; cursor: pointer; display: block; margin-bottom: 15px;">
-            <input type="checkbox" id="elderly-mode-chk" style="transform: scale(2); margin-right: 15px;">
-            <span class="lang" data-zh="開啟長者模式" data-en="Elderly Mode On">開啟長者模式</span>
-        </label>
-        
-        <div id="speed-ctrl-container">
-            <label class="lang" data-zh="路徑顯示速度" data-en="Path Speed">路徑顯示速度</label><br>
-            <input type="range" id="speed-range" min="300" max="1500" value="800" step="100">
-        </div>
-    </div>
-    
-    <button onclick="startGame()" class="lang" data-zh="開始遊戲" data-en="Start Game">開始遊戲</button>
-    <button onclick="showView('lobby')" style="background: #444; color: #fff;">Back</button>
+    <h2 class="lang" data-zh="訓練項目" data-en="Tasks">訓練項目</h2>
+    <button onclick="initGame1()" style="width: 80%;">⚡ <span class="lang" data-zh="捕鼠特攻" data-en="Rat Catcher">捕鼠特攻</span></button>
+    <button onclick="initGame2()" style="width: 80%;">🧠 <span class="lang" data-zh="老鼠迷蹤" data-en="Mouse Maze">老鼠迷蹤</span></button>
+    <button onclick="showView('profile')" style="background: #333; color: #ccc; margin-top: 30px;">登出</button>
 </section>
 
 <section id="view-game1" class="view">
-    <div style="font-size: 2rem;">Score: <span id="g1-score">0</span></div>
+    <div class="live-controls">
+        <div class="control-row">
+            <label><input type="checkbox" id="g1-elderly-chk" style="transform: scale(1.5);"> <span class="lang" data-zh="長者模式" data-en="Elderly Mode">長者模式</span></label>
+            <span style="margin-left: 20px;">Score: <span id="g1-score">0</span></span>
+        </div>
+    </div>
+    <div class="progress-wrapper">
+        <div class="progress-text">LV: <span id="g1-lv-text">5x5</span></div>
+        <div id="bar-fill-g1" class="bar-fill"></div>
+    </div>
     <div id="g1-grid" class="game-grid"></div>
-    <button onclick="quitGame()">Exit</button>
+    <button onclick="quitGame()">返回</button>
 </section>
 
 <section id="view-game2" class="view">
-    <div id="g2-lives-display" class="hearts">❤️❤️❤️</div>
-    <div id="g2-level-info" style="font-size: 1.2rem;">Level 1</div>
+    <div class="live-controls">
+        <div class="control-row">
+            <label><input type="checkbox" id="g2-elderly-chk" style="transform: scale(1.5);"> <span class="lang" data-zh="長者模式" data-en="Elderly Mode">長者模式</span></label>
+            <div id="g2-lives-display" class="hearts" style="margin-left: 15px;">❤️❤️❤️</div>
+        </div>
+        <div class="control-row">
+            <span class="lang" data-zh="速度" data-en="Speed">速度</span>:
+            <input type="range" id="g2-speed-range" min="300" max="1500" value="800" step="100">
+        </div>
+    </div>
+    <div class="progress-wrapper">
+        <div class="progress-text">Level <span id="g2-lv-text">1</span></div>
+        <div id="bar-fill-g2" class="bar-fill"></div>
+    </div>
     <div id="g2-grid" class="game-grid"></div>
-    <button onclick="quitGame()">Exit</button>
+    <button onclick="quitGame()">返回</button>
 </section>
 
 <script>
 let appState = {
     lang: 'zh',
-    users: JSON.parse(localStorage.getItem('mouse_final_v5') || '[]'),
-    activeGame: 0,
+    users: JSON.parse(localStorage.getItem('mouse_v7_data') || '[]'),
     g1Active: false
 };
 
@@ -125,7 +146,7 @@ function toggleLanguage() {
     document.querySelectorAll('.lang').forEach(el => { el.innerText = el.getAttribute(`data-${appState.lang}`); });
 }
 
-/* --- 用戶邏輯 --- */
+/* --- 用戶管理 --- */
 function refreshUserList() {
     const container = document.getElementById('user-list-container');
     container.innerHTML = appState.users.map((u, i) => `<div class="profile-item" onclick="selectUser(${i})">👤 ${u.name}</div>`).join('');
@@ -134,7 +155,7 @@ function handleCreateUser() {
     const input = document.getElementById('name-input');
     if (!input.value) return;
     appState.users.push({ name: input.value });
-    localStorage.setItem('mouse_final_v5', JSON.stringify(appState.users));
+    localStorage.setItem('mouse_v7_data', JSON.stringify(appState.users));
     input.value = ''; refreshUserList();
 }
 function selectUser(i) {
@@ -142,22 +163,7 @@ function selectUser(i) {
     showView('lobby');
 }
 
-/* --- 設定頁邏輯 --- */
-function showConfig(gameNum) {
-    appState.activeGame = gameNum;
-    document.getElementById('config-title').innerText = gameNum === 1 ? "捕鼠特攻" : "老鼠迷蹤";
-    document.getElementById('config-rules').innerText = gameNum === 1 
-        ? "只點擊老鼠 🐀，忽視其他動物。長者模式下時間延長至 10 秒。"
-        : "記住老鼠走過的路徑。點錯時可在原位重試。";
-    document.getElementById('speed-ctrl-container').style.display = gameNum === 2 ? "block" : "none";
-    showView('config');
-}
-
-function startGame() {
-    if (appState.activeGame === 1) initGame1(); else initGame2();
-}
-
-/* --- Game 1: 捕鼠特攻 (多元干擾) --- */
+/* --- Game 1 --- */
 let g1Data = { score: 0, gridSize: 5, timer: null };
 const decoys = ['🐹', '🐰', '🐥', '🐱', '🐶'];
 
@@ -171,15 +177,18 @@ function runG1Cycle() {
     grid.style.setProperty('--grid-size', g1Data.gridSize);
     grid.innerHTML = '';
     
+    document.getElementById('g1-score').innerText = g1Data.score;
+    document.getElementById('g1-lv-text').innerText = `${g1Data.gridSize}x${g1Data.gridSize}`;
+    document.getElementById('bar-fill-g1').style.width = (g1Data.score % 100) + "%";
+
     for (let i=0; i<g1Data.gridSize**2; i++) {
         const cell = document.createElement('div');
         cell.className = 'cell';
         cell.onclick = () => {
             if (cell.innerText === '🐀') {
                 cell.classList.add('hit-effect'); g1Data.score += 10;
-                if (g1Data.score % 100 === 0 && g1Data.gridSize < 10) g1Data.gridSize++;
-                document.getElementById('g1-score').innerText = g1Data.score;
-                clearTimeout(g1Data.timer); setTimeout(runG1Cycle, 400);
+                if (g1Data.score > 0 && g1Data.score % 100 === 0 && g1Data.gridSize < 10) g1Data.gridSize++;
+                clearTimeout(g1Data.timer); setTimeout(runG1Cycle, 300);
             }
         };
         grid.appendChild(cell);
@@ -188,36 +197,36 @@ function runG1Cycle() {
     cells[Math.floor(Math.random() * cells.length)].innerText = '🐀';
     
     // 干擾項
-    let decoyCount = Math.floor(g1Data.gridSize * 1.2);
-    for(let d=0; d<decoyCount; d++) {
+    let count = Math.floor(g1Data.gridSize * 1.5);
+    for(let d=0; d<count; d++) {
         let idx = Math.floor(Math.random() * cells.length);
         if(cells[idx].innerText === '') cells[idx].innerText = decoys[Math.floor(Math.random()*decoys.length)];
     }
 
-    let delay = document.getElementById('elderly-mode-chk').checked ? 10000 : 1500 - (g1Data.gridSize * 100);
+    // 即時檢查長者模式
+    let delay = document.getElementById('g1-elderly-chk').checked ? 10000 : 1600 - (g1Data.gridSize * 100);
     g1Data.timer = setTimeout(() => { if (appState.g1Active) runG1Cycle(); }, Math.max(700, delay));
 }
 
-/* --- Game 2: 老鼠迷蹤 (動態重試) --- */
-let g2Data = { level: 1, size: 5, lives: 3, path: [], playerIdx: 0 };
-function initGame2() {
-    g2Data.level = 1; g2Data.size = 5;
-    showView('game2'); startG2Level();
-}
-async function startG2Level() {
-    g2Data.playerIdx = 0;
-    const isElderly = document.getElementById('elderly-mode-chk').checked;
-    const speed = parseInt(document.getElementById('speed-range').value);
+/* --- Game 2 --- */
+let g2Data = { level: 1, size: 5, lives: 3, path: [], playerIdx: 0, isShowing: false };
+function initGame2() { g2Data.level = 1; g2Data.size = 5; showView('game2'); startG2Level(); }
 
-    // 生命計算
+async function startG2Level() {
+    g2Data.playerIdx = 0; g2Data.isShowing = true;
+    const isElderly = document.getElementById('g2-elderly-chk').checked;
+    const speed = parseInt(document.getElementById('g2-speed-range').value);
+
     let routeLen = g2Data.level + 3;
     g2Data.lives = isElderly ? (g2Data.size**2) : Math.max(2, Math.floor(routeLen * 0.2));
 
     const grid = document.getElementById('g2-grid');
     grid.style.setProperty('--grid-size', g2Data.size);
     grid.innerHTML = '';
-    document.getElementById('g2-lives-display').innerText = isElderly ? "♾️" : "❤️".repeat(Math.min(g2Data.lives, 8));
-    document.getElementById('g2-level-info').innerText = `Level ${g2Data.level} (Retries: ${g2Data.lives})`;
+    
+    updateG2Hearts();
+    document.getElementById('g2-lv-text').innerText = g2Data.level;
+    document.getElementById('bar-fill-g2').style.width = ((g2Data.level % 5) * 20) + "%";
 
     for (let i=0; i<g2Data.size**2; i++) {
         const cell = document.createElement('div');
@@ -240,22 +249,29 @@ async function startG2Level() {
         let target = grid.querySelector(`[data-pos="${p}"]`);
         target.innerText = '🐀'; await new Promise(r => setTimeout(r, speed)); target.innerText = '';
     }
+    g2Data.isShowing = false;
     setupG2Input();
+}
+
+function updateG2Hearts() {
+    const isElderly = document.getElementById('g2-elderly-chk').checked;
+    document.getElementById('g2-lives-display').innerText = isElderly ? "♾️" : "❤️".repeat(Math.max(0, g2Data.lives));
 }
 
 function setupG2Input() {
     document.querySelectorAll('#g2-grid .cell').forEach(c => {
         c.onclick = () => {
+            if (g2Data.isShowing) return;
             if (c.dataset.pos === g2Data.path[g2Data.playerIdx]) {
                 c.innerText = '🐀'; c.classList.add('correct'); g2Data.playerIdx++;
                 if (g2Data.playerIdx === g2Data.path.length) {
                     g2Data.level++; if (g2Data.level % 3 === 0 && g2Data.size < 10) g2Data.size++;
-                    setTimeout(startG2Level, 800);
+                    setTimeout(startG2Level, 600);
                 }
             } else {
                 g2Data.lives--; c.classList.add('wrong');
-                document.getElementById('g2-lives-display').innerText = g2Data.lives > 15 ? "♾️" : "❤️".repeat(Math.max(0, g2Data.lives));
-                setTimeout(() => { c.classList.remove('wrong'); if (g2Data.lives <= 0) startG2Level(); }, 400);
+                updateG2Hearts();
+                setTimeout(() => { c.classList.remove('wrong'); if (g2Data.lives <= 0) startG2Level(); }, 300);
             }
         };
     });
