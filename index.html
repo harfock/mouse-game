@@ -3,178 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>鼠鼠大作戰 - 專業訓練最終版</title>
+    <title>鼠鼠大作戰 - 完美適配版</title>
     <style>
         :root {
             --bg: #000;
             --text: #FFFF00;
             --accent: #FFCC00;
+            /* 動態計算網格大小：取寬或高的 75%，確保一屏裝得下 */
+            --grid-px: 75vmin; 
             --grid-size: 5;
-            --max-px: 450px;
         }
 
         body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'PingFang HK', 'Microsoft JhengHei', sans-serif;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            touch-action: manipulation;
-            overflow-x: hidden;
+            background-color: var(--bg); color: var(--text);
+            font-family: sans-serif; margin: 0; overflow: hidden; /* 禁止全頁滾動 */
+            display: flex; flex-direction: column; align-items: center; height: 100vh;
         }
 
-        /* --- 頂部導航 --- */
         header { 
-            width: 100%; padding: 12px; background: #222; 
-            display: flex; justify-content: space-between; align-items: center; 
-            box-sizing: border-box; border-bottom: 2px solid var(--accent);
-            position: sticky; top: 0; z-index: 100;
+            width: 100%; padding: 10px; background: #222; border-bottom: 2px solid var(--accent);
+            display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;
         }
 
-        /* --- 視圖切換 --- */
-        .view { display: none; width: 95%; max-width: 600px; padding: 15px; text-align: center; box-sizing: border-box; }
-        .view.active { display: block; }
+        .view { display: none; width: 100%; height: calc(100vh - 60px); padding: 10px; text-align: center; box-sizing: border-box; }
+        .view.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
-        /* --- 規則與提示卡片 --- */
-        .rule-card { 
-            background: #111; border-left: 5px solid var(--accent); 
-            padding: 15px; margin: 15px 0; text-align: left; 
-            font-size: 1.1rem; line-height: 1.6; color: #FFF; border-radius: 4px; 
-        }
-        .hint-text { font-size: 1rem; color: #BBB; margin: 8px 0; font-weight: bold; min-height: 1.2em; }
+        /* --- 規則與控制項 --- */
+        .rule-card { background: #111; border: 1px solid var(--accent); padding: 10px; margin: 5px; text-align: left; font-size: 0.9rem; max-width: 90%; }
+        .live-controls { background: #1A1A1A; padding: 8px; width: 90%; border-radius: 8px; margin-bottom: 10px; }
+        .hint-text { font-size: 0.9rem; color: #BBB; margin: 5px 0; }
 
-        /* --- 進度條 --- */
-        .progress-wrapper { 
-            width: 100%; background: #333; border-radius: 20px; height: 24px; 
-            margin: 10px 0; border: 1px solid var(--accent); overflow: hidden; position: relative; 
-        }
-        .bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
-        .progress-text { 
-            position: absolute; width: 100%; text-align: center; color: #fff; 
-            font-size: 14px; font-weight: bold; line-height: 24px; z-index: 2; text-shadow: 1px 1px 2px #000; 
-        }
-
-        /* --- 即時控制面板 --- */
-        .live-controls { 
-            background: #1A1A1A; padding: 12px; border-radius: 12px; 
-            margin: 10px 0; border: 1px solid var(--accent);
-        }
-        .control-row { display: flex; justify-content: center; align-items: center; gap: 15px; font-size: 1.2rem; flex-wrap: wrap; margin-bottom: 5px; }
-
-        /* --- 核心網格系統 (修正變形) --- */
+        /* --- 完美正方形網格 --- */
         .game-grid {
             display: grid;
             grid-template-columns: repeat(var(--grid-size), 1fr);
-            grid-template-rows: repeat(var(--grid-size), 1fr); /* 強制行列一致 */
-            gap: 6px; 
-            width: 90vw; 
-            max-width: var(--max-px);
-            aspect-ratio: 1 / 1; /* 強制正方形容器 */
-            margin: 15px auto; background: #222; padding: 10px; border-radius: 10px;
+            grid-template-rows: repeat(var(--grid-size), 1fr);
+            gap: 4px;
+            width: var(--grid-px);
+            height: var(--grid-px);
+            background: #222; padding: 5px; border-radius: 8px;
             box-sizing: border-box;
         }
 
         .cell {
-            background: #333; border-radius: 8px; display: flex; justify-content: center; align-items: center;
-            cursor: pointer; font-size: calc(45vw / var(--grid-size)); 
-            max-font-size: 60px;
-            transition: background 0.1s, transform 0.1s;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
+            background: #333; border-radius: 4px;
+            display: flex; justify-content: center; align-items: center;
+            /* 關鍵：Emoji 大小隨網格寬度縮放，絕對不撐破 */
+            font-size: calc(var(--grid-px) / var(--grid-size) * 0.6);
+            line-height: 1; user-select: none;
+            aspect-ratio: 1 / 1;
         }
-        .cell:active { transform: scale(0.95); }
-        .cell.correct { background: #4CAF50 !important; }
-        .cell.wrong { background: #F44336 !important; }
-        
-        @keyframes hitEffect { 0% { transform: scale(1); } 50% { transform: scale(1.5); background: #FFF; } 100% { transform: scale(1); } }
-        .hit-effect { animation: hitEffect 0.3s forwards; }
 
-        /* --- UI 元件 --- */
-        button { background: var(--accent); color: #000; border: none; padding: 14px 24px; font-size: 1.3rem; font-weight: bold; border-radius: 12px; margin: 10px; cursor: pointer; transition: 0.2s; }
-        button:active { background: #CCAA00; }
-        .profile-item { background: #111; border: 2px solid var(--accent); padding: 18px; margin: 12px 0; border-radius: 12px; font-size: 1.6rem; cursor: pointer; }
-        .hearts { font-size: 2.2rem; color: #ff4444; }
-        input[type=range] { width: 140px; height: 25px; cursor: pointer; }
-        input[type=checkbox] { transform: scale(2); margin-right: 12px; cursor: pointer; }
-        input[type=text] { font-size: 1.3rem; padding: 12px; border-radius: 10px; border: 2px solid #555; background: #111; color: #fff; }
+        /* --- 其它元件 --- */
+        .progress-wrapper { width: 80%; background: #333; height: 15px; border-radius: 10px; margin: 5px 0; position: relative; overflow: hidden; border: 1px solid var(--accent); }
+        .bar-fill { height: 100%; background: var(--accent); width: 0%; transition: 0.3s; }
+        
+        button { background: var(--accent); color: #000; border: none; padding: 10px 20px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; margin: 5px; cursor: pointer; }
+        .profile-item { background: #111; border: 1px solid var(--accent); padding: 15px; margin: 5px; width: 80%; border-radius: 8px; font-size: 1.2rem; }
+        input[type=checkbox] { transform: scale(1.5); margin-right: 5px; }
+
+        /* 特效 */
+        .hit-effect { background: #FFF !important; transform: scale(1.1); transition: 0.1s; }
+        .correct { background: #4CAF50 !important; }
+        .wrong { background: #F44336 !important; }
     </style>
 </head>
 <body>
 
 <header>
     <div id="top-user-name">👤 <span id="current-name-display">---</span></div>
-    <button onclick="toggleLanguage()" style="font-size: 0.9rem; padding: 6px 12px; margin: 0;">ZH / EN</button>
+    <button onclick="toggleLanguage()">ZH / EN</button>
 </header>
 
 <section id="view-profile" class="view active">
-    <h1 class="lang" data-zh="鼠鼠訓練營" data-en="Mouse Academy">鼠鼠訓練營</h1>
-    <div id="user-list-container"></div>
-    <div style="margin-top: 30px;">
-        <input type="text" id="name-input" placeholder="Name" style="width: 50%;">
-        <button onclick="handleCreateUser()" class="lang" data-zh="新增" data-en="Add">新增</button>
+    <h1>鼠鼠訓練營</h1>
+    <div id="user-list-container" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
+    <div style="margin-top: 15px;">
+        <input type="text" id="name-input" placeholder="Name" style="padding: 10px; font-size: 1rem;">
+        <button onclick="handleCreateUser()">新增</button>
     </div>
 </section>
 
 <section id="view-lobby" class="view">
-    <h2 class="lang" data-zh="請選擇訓練項目" data-en="Select Your Task">請選擇訓練項目</h2>
-    
-    <div class="rule-card">
-        <strong class="lang" data-zh="⚡ 捕鼠特攻：" data-en="⚡ Rat Catcher:">⚡ 捕鼠特攻：</strong><br>
-        <span class="lang" data-zh="只點擊 🐀，無視其他動物 (🐹🐰🐥)。訓練視覺敏銳度。" data-en="Hit only 🐀, ignore others (🐹🐰🐥). Trains focus.">只點擊 🐀，無視其他動物 (🐹🐰🐥)。訓練視覺敏銳度。</span>
-    </div>
-    <button onclick="initGame1()" style="width: 90%;">⚡ <span class="lang" data-zh="開始捕鼠" data-en="Start Task 1">開始捕鼠</span></button>
-
-    <div class="rule-card" style="margin-top: 20px;">
-        <strong class="lang" data-zh="🧠 老鼠迷蹤：" data-en="🧠 Mouse Maze:">🧠 老鼠迷蹤：</strong><br>
-        <span class="lang" data-zh="記住 🐀 走過的路徑，等牠消失後按順序點擊。訓練記憶力。" data-en="Remember the path, then repeat it once it's gone. Trains memory.">記住 🐀 走過的路徑，等牠消失後按順序點擊。訓練記憶力。</span>
-    </div>
-    <button onclick="initGame2()" style="width: 90%;">🧠 <span class="lang" data-zh="開始記憶" data-en="Start Task 2">開始記憶</span></button>
-    
-    <button onclick="showView('profile')" style="background: #333; color: #ccc; margin-top: 40px; font-size: 1.1rem;">登出 / Switch User</button>
+    <div class="rule-card lang" data-zh="⚡ 捕鼠特攻：點擊 🐀，無視其他動物。" data-en="⚡ Catcher: Hit 🐀, ignore others.">⚡ 捕鼠特攻：點擊 🐀，無視其他動物。</div>
+    <button onclick="initGame1()" style="width: 80%;">開始捕鼠</button>
+    <div class="rule-card lang" data-zh="🧠 老鼠迷蹤：記住路徑，消失後點回。" data-en="🧠 Maze: Follow the path.">🧠 老鼠迷蹤：記住路徑，消失後點回。</div>
+    <button onclick="initGame2()" style="width: 80%;">開始記憶</button>
+    <button onclick="showView('profile')" style="background: #333; color: #ccc;">切換用戶</button>
 </section>
 
 <section id="view-game1" class="view">
     <div class="live-controls">
-        <div class="control-row">
-            <label><input type="checkbox" id="g1-elderly-chk"> <span class="lang" data-zh="長者模式" data-en="Elderly Mode">長者模式</span></label>
-            <span style="margin-left: 20px;">Score: <span id="g1-score">0</span></span>
-        </div>
-        <div class="hint-text lang" data-zh="💡 玩法：只點擊 🐀，別理會其他動物！" data-en="💡 Hint: Hit the 🐀, ignore decoys!">💡 玩法：只點擊 🐀，別理會其他動物！</div>
+        <label><input type="checkbox" id="g1-elderly-chk"> 長者模式</label> | Score: <span id="g1-score">0</span>
+        <div class="hint-text">💡 只點擊 🐀，無視其他動物！</div>
     </div>
-    <div class="progress-wrapper">
-        <div class="progress-text">GRID: <span id="g1-lv-text">5x5</span></div>
-        <div id="bar-fill-g1" class="bar-fill"></div>
-    </div>
+    <div class="progress-wrapper"><div id="bar-fill-g1" class="bar-fill"></div></div>
     <div id="g1-grid" class="game-grid"></div>
-    <button onclick="quitGame()" class="lang" data-zh="返回大廳" data-en="Back">返回大廳</button>
+    <button onclick="quitGame()">返回</button>
 </section>
 
 <section id="view-game2" class="view">
     <div class="live-controls">
-        <div class="control-row">
-            <label><input type="checkbox" id="g2-elderly-chk"> <span class="lang" data-zh="長者模式" data-en="Elderly Mode">長者模式</span></label>
-            <div id="g2-lives-display" class="hearts" style="margin-left: 20px;">❤️❤️❤️</div>
-        </div>
-        <div class="control-row">
-            <span class="lang" data-zh="顯示速度" data-en="Speed">顯示速度</span>:
-            <input type="range" id="g2-speed-range" min="300" max="1500" value="800" step="100">
-        </div>
-        <div class="hint-text lang" id="g2-hint" data-zh="💡 玩法：記住路徑，等老鼠走完後點擊格子。" data-en="💡 Hint: Watch the path first.">💡 玩法：記住路徑，等老鼠走完後點擊格子。</div>
+        <label><input type="checkbox" id="g2-elderly-chk"> 長者模式</label> | <span id="g2-lives-display" class="hearts">❤️❤️❤️</span>
+        <div style="margin-top: 5px;">速度: <input type="range" id="g2-speed-range" min="300" max="1500" value="800"></div>
+        <div id="g2-hint" class="hint-text">💡 記住路徑，消失後再按！</div>
     </div>
-    <div class="progress-wrapper">
-        <div class="progress-text">LEVEL <span id="g2-lv-text">1</span></div>
-        <div id="bar-fill-g2" class="bar-fill"></div>
-    </div>
+    <div class="progress-wrapper"><div id="bar-fill-g2" class="bar-fill"></div></div>
     <div id="g2-grid" class="game-grid"></div>
-    <button onclick="quitGame()" class="lang" data-zh="返回大廳" data-en="Back">返回大廳</button>
+    <button onclick="quitGame()">返回</button>
 </section>
 
 <script>
-let appState = { lang: 'zh', users: JSON.parse(localStorage.getItem('mouse_master_v12') || '[]'), g1Active: false };
-const decoys = ['🐹', '🐰', '🐥', '🐱', '🐶', '🦊'];
+let appState = { lang: 'zh', users: JSON.parse(localStorage.getItem('mouse_v13') || '[]'), g1Active: false };
+const decoys = ['🐹', '🐰', '🐥', '🐱', '🐶'];
 
 function showView(id) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -187,7 +128,6 @@ function toggleLanguage() {
     document.querySelectorAll('.lang').forEach(el => { el.innerText = el.getAttribute(`data-${appState.lang}`); });
 }
 
-/* --- 用戶管理 --- */
 function refreshUserList() {
     const container = document.getElementById('user-list-container');
     container.innerHTML = appState.users.map((u, i) => `<div class="profile-item" onclick="selectUser(${i})">👤 ${u.name}</div>`).join('');
@@ -195,7 +135,7 @@ function refreshUserList() {
 function handleCreateUser() {
     const input = document.getElementById('name-input'); if (!input.value) return;
     appState.users.push({ name: input.value });
-    localStorage.setItem('mouse_master_v12', JSON.stringify(appState.users));
+    localStorage.setItem('mouse_v13', JSON.stringify(appState.users));
     input.value = ''; refreshUserList();
 }
 function selectUser(i) {
@@ -203,139 +143,98 @@ function selectUser(i) {
     showView('lobby');
 }
 
-/* --- Game 1: 捕鼠特攻 (修正反應時間與閃退) --- */
+/* --- Game 1 --- */
 let g1Data = { score: 0, gridSize: 5, timer: null };
-
 function initGame1() { g1Data.score = 0; g1Data.gridSize = 5; showView('game1'); runG1Cycle(); }
-
 function runG1Cycle() {
     if (!appState.g1Active) return;
     clearTimeout(g1Data.timer);
-    
     const grid = document.getElementById('g1-grid');
-    grid.style.setProperty('--grid-size', g1Data.gridSize);
+    document.documentElement.style.setProperty('--grid-size', g1Data.gridSize);
     grid.innerHTML = '';
     
     document.getElementById('g1-score').innerText = g1Data.score;
-    document.getElementById('g1-lv-text').innerText = `${g1Data.gridSize}x${g1Data.gridSize}`;
     document.getElementById('bar-fill-g1').style.width = (g1Data.score % 100) + "%";
 
-    for (let i=0; i < g1Data.gridSize**2; i++) {
+    for (let i=0; i<g1Data.gridSize**2; i++) {
         const cell = document.createElement('div');
         cell.className = 'cell';
-        cell.onclick = (e) => {
-            e.preventDefault();
+        cell.onclick = () => {
             if (cell.innerText === '🐀') {
-                cell.classList.add('hit-effect'); 
-                g1Data.score += 10;
+                cell.classList.add('hit-effect'); g1Data.score += 10;
                 if (g1Data.score > 0 && g1Data.score % 100 === 0 && g1Data.gridSize < 9) g1Data.gridSize++;
-                clearTimeout(g1Data.timer); 
-                setTimeout(runG1Cycle, 250); 
+                clearTimeout(g1Data.timer); setTimeout(runG1Cycle, 200);
             }
         };
         grid.appendChild(cell);
     }
-
     const cells = grid.querySelectorAll('.cell');
     cells[Math.floor(Math.random() * cells.length)].innerText = '🐀';
-    
-    let decoyCount = Math.floor(g1Data.gridSize * 1.5);
-    for(let d=0; d < decoyCount; d++) {
+    for(let d=0; d<Math.floor(g1Data.gridSize*1.5); d++) {
         let idx = Math.floor(Math.random() * cells.length);
-        if(cells[idx].innerText === '') cells[idx].innerText = decoys[Math.floor(Math.random() * decoys.length)];
+        if(cells[idx].innerText === '') cells[idx].innerText = decoys[Math.floor(Math.random()*decoys.length)];
     }
-
     const isElderly = document.getElementById('g1-elderly-chk').checked;
-    // 修正點：反應時間保護底線提升至 900ms，減少手機感應壓力
-    let delay = isElderly ? 10000 : Math.max(900, 1800 - (g1Data.gridSize * 120));
-
+    let delay = isElderly ? 8000 : Math.max(900, 1800 - (g1Data.gridSize * 120));
     g1Data.timer = setTimeout(() => { if (appState.g1Active) runG1Cycle(); }, delay);
 }
 
-/* --- Game 2: 老鼠迷蹤 (修正變形與路徑播放) --- */
+/* --- Game 2 --- */
 let g2Data = { level: 1, size: 5, lives: 3, path: [], playerIdx: 0, isShowing: false };
-
 function initGame2() { g2Data.level = 1; g2Data.size = 5; showView('game2'); startG2Level(); }
-
 async function startG2Level() {
     g2Data.playerIdx = 0; g2Data.isShowing = true;
     const isElderly = document.getElementById('g2-elderly-chk').checked;
     const speed = parseInt(document.getElementById('g2-speed-range').value);
-
-    let routeLen = g2Data.level + 3;
-    g2Data.lives = isElderly ? (g2Data.size**2) : Math.max(2, Math.floor(routeLen * 0.2));
+    g2Data.lives = isElderly ? 99 : Math.max(2, Math.floor((g2Data.level + 3) * 0.2));
 
     const grid = document.getElementById('g2-grid');
-    grid.style.setProperty('--grid-size', g2Data.size);
+    document.documentElement.style.setProperty('--grid-size', g2Data.size);
     grid.innerHTML = '';
-    
-    updateG2Hearts();
-    document.getElementById('g2-lv-text').innerText = g2Data.level;
+    document.getElementById('g2-lives-display').innerText = isElderly ? "♾️" : "❤️".repeat(g2Data.lives);
     document.getElementById('bar-fill-g2').style.width = ((g2Data.level % 5) * 20) + "%";
 
-    for (let i=0; i < g2Data.size**2; i++) {
+    for (let i=0; i<g2Data.size**2; i++) {
         const cell = document.createElement('div');
-        cell.className = 'cell';
-        cell.dataset.pos = `${Math.floor(i/g2Data.size)}-${i%g2Data.size}`;
+        cell.className = 'cell'; cell.dataset.pos = `${Math.floor(i/g2Data.size)}-${i%g2Data.size}`;
         grid.appendChild(cell);
     }
 
-    // 生成隨機路徑
     g2Data.path = ["0-0"];
     let curr = {x:0, y:0};
-    for (let s=0; s < routeLen; s++) {
+    for (let s=0; s<(g2Data.level+3); s++) {
         let n = [{x:curr.x+1, y:curr.y}, {x:curr.x-1, y:curr.y}, {x:curr.x, y:curr.y+1}, {x:curr.x, y:curr.y-1}]
                 .filter(p => p.x>=0 && p.x<g2Data.size && p.y>=0 && p.y<g2Data.size && !g2Data.path.includes(`${p.x}-${p.y}`));
         if (n.length === 0) break;
-        curr = n[Math.floor(Math.random()*n.length)];
-        g2Data.path.push(`${curr.x}-${curr.y}`);
+        curr = n[Math.floor(Math.random()*n.length)]; g2Data.path.push(`${curr.x}-${curr.y}`);
     }
 
-    // 播放路徑
-    document.getElementById('g2-hint').innerText = appState.lang === 'zh' ? '👀 請觀察老鼠移動...' : '👀 Watch the rat...';
+    document.getElementById('g2-hint').innerText = "👀 觀察中...";
     for (let p of g2Data.path) {
         let target = grid.querySelector(`[data-pos="${p}"]`);
         if(target) { target.innerText = '🐀'; await new Promise(r => setTimeout(r, speed)); target.innerText = ''; }
     }
-    document.getElementById('g2-hint').innerText = appState.lang === 'zh' ? '👉 請按順序點擊！' : '👉 Repeat the path!';
+    document.getElementById('g2-hint').innerText = "👉 請按順序點擊！";
     g2Data.isShowing = false;
-    setupG2Input();
-}
-
-function updateG2Hearts() {
-    const isElderly = document.getElementById('g2-elderly-chk').checked;
-    document.getElementById('g2-lives-display').innerText = isElderly ? "♾️" : "❤️".repeat(Math.max(0, g2Data.lives));
-}
-
-function setupG2Input() {
-    document.querySelectorAll('#g2-grid .cell').forEach(c => {
-        c.onclick = (e) => {
-            e.preventDefault();
+    document.querySelectorAll('.cell').forEach(c => {
+        c.onclick = () => {
             if (g2Data.isShowing) return;
             if (c.dataset.pos === g2Data.path[g2Data.playerIdx]) {
-                c.innerText = '🐀'; c.classList.add('correct');
-                g2Data.playerIdx++;
+                c.innerText = '🐀'; c.classList.add('correct'); g2Data.playerIdx++;
                 if (g2Data.playerIdx === g2Data.path.length) {
-                    g2Data.level++; 
-                    if (g2Data.level % 3 === 0 && g2Data.size < 9) g2Data.size++;
+                    g2Data.level++; if (g2Data.level % 3 === 0 && g2Data.size < 9) g2Data.size++;
                     setTimeout(startG2Level, 600);
                 }
             } else {
-                g2Data.lives--;
-                c.classList.add('wrong');
-                updateG2Hearts();
+                g2Data.lives--; c.classList.add('wrong');
+                document.getElementById('g2-lives-display').innerText = isElderly ? "♾️" : "❤️".repeat(Math.max(0, g2Data.lives));
                 setTimeout(() => { c.classList.remove('wrong'); if (g2Data.lives <= 0) startG2Level(); }, 300);
             }
         };
     });
 }
 
-function quitGame() {
-    appState.g1Active = false;
-    clearTimeout(g1Data.timer);
-    showView('lobby');
-}
-
+function quitGame() { appState.g1Active = false; clearTimeout(g1Data.timer); showView('lobby'); }
 window.onload = () => { refreshUserList(); toggleLanguage(); };
 </script>
 </body>
