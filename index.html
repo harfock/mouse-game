@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>鼠鼠大作戰 - 老年腦力訓練</title>
+    <title>鼠鼠大作戰 - 專業訓練版</title>
     <style>
-        /* --- 1. CSS 變數與基礎樣式 --- */
         :root {
             --bg: #000000;
-            --text: #FFFF00; /* 高對比黃色 */
+            --text: #FFFF00;
             --accent: #FFCC00;
             --card-bg: #1A1A1A;
-            --font-main: 24px;
             --grid-size: 5;
+            --grid-px: 450px; /* 網格固定顯示寬度 */
         }
 
         body {
@@ -24,316 +23,313 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            overflow-x: hidden;
         }
 
-        /* --- 2. 佈局與導航 --- */
-        header {
-            width: 100%;
-            padding: 10px;
-            background: #333;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+        /* --- 動畫效果 --- */
+        @keyframes hitZoom {
+            0% { transform: scale(1); }
+            50% { transform: scale(2.5); background: #FFF; z-index: 99; color: #000; }
+            100% { transform: scale(1); }
         }
 
-        .view { display: none; width: 95%; max-width: 800px; padding: 20px; text-align: center; }
-        .view.active { display: block; animation: fadeIn 0.3s; }
+        /* --- 佈局 --- */
+        header { width: 100%; padding: 15px; background: #222; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
+        .view { display: none; width: 95%; max-width: 600px; padding: 20px; text-align: center; box-sizing: border-box; }
+        .view.active { display: block; }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* --- 進度條 --- */
+        .progress-wrapper { width: 100%; background: #333; border-radius: 20px; height: 25px; margin: 15px 0; border: 2px solid var(--accent); overflow: hidden; position: relative; }
+        #bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+        .progress-text { position: absolute; width: 100%; text-align: center; color: #fff; font-size: 14px; font-weight: bold; line-height: 25px; }
 
-        /* --- 3. 網格系統 (5x5 to 10x10) --- */
+        /* --- 網格控制 (關鍵：保持正方形不變形) --- */
         .game-grid {
             display: grid;
             grid-template-columns: repeat(var(--grid-size), 1fr);
-            gap: 5px;
-            width: 90vw;
-            max-width: 500px;
-            aspect-ratio: 1/1;
+            grid-template-rows: repeat(var(--grid-size), 1fr);
+            gap: 6px;
+            width: var(--grid-px);
+            height: var(--grid-px);
             margin: 20px auto;
+            background: #222;
+            padding: 10px;
+            border-radius: 10px;
+            box-sizing: border-box;
         }
 
         .cell {
-            background: #444;
+            background: #333;
             border-radius: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 2rem;
             cursor: pointer;
             user-select: none;
+            /* 動態字體大小：確保 Emoji 始終填滿格子 */
+            font-size: calc(var(--grid-px) / var(--grid-size) * 0.7);
+            line-height: 1;
             transition: 0.1s;
         }
 
-        .cell.active { background: #FFFDE7; }
-        .cell.path { background: #FFEB3B; } /* 記憶路徑顏色 */
-        .cell.correct { background: #4CAF50; }
-        .cell.wrong { background: #F44336; }
+        .hit-effect { animation: hitZoom 0.4s forwards; }
 
-        /* --- 4. 按鈕與介面 --- */
-        button {
-            background: var(--accent);
-            color: #000;
-            border: none;
-            padding: 15px 30px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            border-radius: 10px;
-            margin: 10px;
-            cursor: pointer;
-        }
+        /* --- 按鈕與清單 --- */
+        button { background: var(--accent); color: #000; border: none; padding: 15px 30px; font-size: 1.5rem; font-weight: bold; border-radius: 12px; margin: 10px; cursor: pointer; }
+        button:active { transform: scale(0.95); }
+        .profile-item { background: var(--card-bg); border: 3px solid var(--accent); padding: 20px; margin: 15px 0; border-radius: 15px; font-size: 1.8rem; cursor: pointer; }
+        .rule-box { text-align: left; background: #111; padding: 20px; border-radius: 12px; border-left: 8px solid var(--accent); margin: 20px 0; font-size: 1.3rem; }
 
-        .menu-card {
-            background: var(--card-bg);
-            border: 3px solid var(--accent);
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 15px;
-        }
-
-        .stat-bar { font-size: 1.8rem; margin: 10px 0; }
-        .target-box { border: 2px solid white; padding: 5px; display: inline-block; }
+        .hearts { font-size: 2.5rem; color: #ff4444; margin: 10px; }
     </style>
 </head>
 <body>
 
 <header>
-    <div id="user-display">👤 <span id="current-player-name">--</span></div>
-    <div>
-        <button onclick="toggleLang()" style="padding: 5px 10px; font-size: 1rem;">ZH/EN</button>
-        <button onclick="showView('settings')" style="padding: 5px 10px; font-size: 1rem;">⚙️</button>
-    </div>
+    <div id="top-user-name">👤 <span id="current-name-display">---</span></div>
+    <button onclick="toggleLanguage()" style="font-size: 1rem; padding: 5px 15px;">繁 / EN</button>
 </header>
 
-<section id="view-home" class="view active">
-    <h1 class="lang" data-zh="鼠鼠大作戰" data-en="Mouse Battles">鼠鼠大作戰</h1>
-    <div class="menu-card" onclick="startWhackGame()">
-        <h2>⚡ <span class="lang" data-zh="捕鼠特攻" data-en="Rat Catcher">捕鼠特攻</span></h2>
-        <p class="lang" data-zh="看到老鼠就點擊！" data-en="Click when you see the Rat!">看到老鼠就點擊！</p>
+<section id="view-profile" class="view active">
+    <h1 class="lang" data-zh="鼠鼠訓練營" data-en="Mouse Trainer">鼠鼠訓練營</h1>
+    <div id="user-list-container"></div>
+    <div style="margin-top: 30px;">
+        <input type="text" id="name-input" placeholder="Name" style="font-size: 1.5rem; padding: 10px; width: 60%; border-radius: 10px;">
+        <button onclick="handleCreateUser()" class="lang" data-zh="新增" data-en="Add">新增</button>
     </div>
-    <div class="menu-card" onclick="startMazeGame()">
-        <h2>🧠 <span class="lang" data-zh="老鼠迷蹤" data-en="Mouse Maze">老鼠迷蹤</span></h2>
-        <p class="lang" data-zh="記住老鼠逃跑的路徑" data-en="Remember the escape path">記住老鼠逃跑的路徑</p>
+</section>
+
+<section id="view-lobby" class="view">
+    <h1 class="lang" data-zh="請選擇遊戲" data-en="Select Game">請選擇遊戲</h1>
+    <div class="rule-box">
+        <p><strong>1. ⚡ <span class="lang" data-zh="捕鼠特攻" data-en="Rat Catcher">捕鼠特攻</span>:</strong></p>
+        <p class="lang" data-zh="目標出現時立刻點擊！滿 100 分將提升難度。" data-en="Click the Rat! Grid size increases every 100 points.">目標出現時立刻點擊！滿 100 分將提升難度。</p>
+        <hr>
+        <p><strong>2. 🧠 <span class="lang" data-zh="老鼠迷蹤" data-en="Mouse Maze">老鼠迷蹤</span>:</strong></p>
+        <p class="lang" data-zh="記住老鼠跑過的路線。每關有 3 次重試機會。" data-en="Memorize the path. You have 3 lives per round.">記住老鼠跑過的路線。每關有 3 次重試機會。</p>
     </div>
+    <button onclick="initGame1()" style="width: 80%;">⚡ <span class="lang" data-zh="開始捕鼠" data-en="Start Catching">開始捕鼠</span></button><br>
+    <button onclick="initGame2()" style="width: 80%;">🧠 <span class="lang" data-zh="記憶挑戰" data-en="Memory Challenge">記憶挑戰</span></button><br>
+    <button onclick="showView('profile')" style="background: #444; color: #ccc; margin-top: 20px;">Logout</button>
 </section>
 
 <section id="view-game1" class="view">
-    <div class="stat-bar">
-        <span class="lang" data-zh="目標:" data-en="Target:">目標:</span> <span id="g1-target" class="target-box">🐀</span> | 
-        <span class="lang" data-zh="得分:" data-en="Score:">得分:</span> <span id="g1-score">0</span>
+    <div class="stat-bar" style="font-size: 2rem;">
+        🐀 <span class="lang" data-zh="得分" data-en="Score">得分</span>: <span id="g1-score">0</span>
+    </div>
+    <div class="progress-wrapper">
+        <div class="progress-text"><span id="g1-level-text">5x5</span></div>
+        <div id="bar-fill-g1" style="height: 100%; background: var(--accent); width: 0%;"></div>
     </div>
     <div id="g1-grid" class="game-grid"></div>
-    <button onclick="showView('home')">Back</button>
+    <button onclick="quitGame()">Exit</button>
 </section>
 
 <section id="view-game2" class="view">
-    <div class="stat-bar">
-        <span id="maze-status" class="lang" data-zh="準備好嗎？" data-en="Ready?">準備好嗎？</span>
-        <div id="g2-level">Level: 5x5</div>
+    <div id="g2-lives-display" class="hearts">❤️❤️❤️</div>
+    <div class="progress-wrapper">
+        <div class="progress-text"><span id="g2-level-text">Level 1</span></div>
+        <div id="bar-fill-g2" style="height: 100%; background: var(--accent); width: 0%;"></div>
     </div>
     <div id="g2-grid" class="game-grid"></div>
-    <button onclick="showView('home')">Back</button>
-</section>
-
-<section id="view-settings" class="view">
-    <h2 class="lang" data-zh="玩家管理" data-en="Users">玩家管理</h2>
-    <input type="text" id="new-user-name" placeholder="Name" style="font-size: 1.5rem;">
-    <button onclick="addUser()" class="lang" data-zh="新增玩家" data-en="Add User">新增玩家</button>
-    <div id="user-list"></div>
-    <button onclick="showView('home')">Back</button>
+    <button onclick="quitGame()">Exit</button>
 </section>
 
 <script>
-/* --- 5. JavaScript 遊戲邏輯 --- */
-
-let state = {
+/* --- 全局狀態 --- */
+let appState = {
     lang: 'zh',
+    users: JSON.parse(localStorage.getItem('mouse_master_data') || '[]'),
     currentUser: null,
-    users: JSON.parse(localStorage.getItem('mouse_users') || '[]'),
-    view: 'home'
+    g1Active: false
 };
 
-// --- 初始化 ---
-function init() {
-    if (state.users.length === 0) {
-        state.users.push({ name: 'Default', g1: 0, g2: 0 });
-    }
-    state.currentUser = state.users[0];
-    updateUI();
-    showView('home');
+function showView(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(`view-${viewId}`).classList.add('active');
+    appState.g1Active = (viewId === 'game1');
 }
 
-function updateUI() {
-    document.getElementById('current-player-name').innerText = state.currentUser.name;
+function toggleLanguage() {
+    appState.lang = appState.lang === 'zh' ? 'en' : 'zh';
     document.querySelectorAll('.lang').forEach(el => {
-        el.innerText = el.getAttribute(`data-${state.lang}`);
+        el.innerText = el.getAttribute(`data-${appState.lang}`);
     });
 }
 
-function toggleLang() {
-    state.lang = state.lang === 'zh' ? 'en' : 'zh';
-    updateUI();
-}
-
-function showView(id) {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById(`view-${id}`).classList.add('active');
-    if(id !== 'game1' && id !== 'game2') stopAllTimers();
-}
-
-// --- 用戶管理 ---
-function addUser() {
-    const name = document.getElementById('new-user-name').value;
-    if(!name) return;
-    state.users.push({ name, g1: 0, g2: 0 });
-    save();
-    renderUserList();
-}
-
-function renderUserList() {
-    const list = document.getElementById('user-list');
-    list.innerHTML = state.users.map((u, i) => `
-        <div class="menu-card" onclick="selectUser(${i})">
-            ${u.name} (Best: ${u.g1} / ${u.g2})
+/* --- 用戶邏輯 --- */
+function refreshUserList() {
+    const container = document.getElementById('user-list-container');
+    container.innerHTML = appState.users.map((u, i) => `
+        <div class="profile-item" onclick="selectUser(${i})">
+            👤 ${u.name} <br>
+            <small style="font-size: 1rem;">Best Score: ${u.best1} | Maze Level: ${u.best2}</small>
         </div>
     `).join('');
 }
 
-function selectUser(i) {
-    state.currentUser = state.users[i];
-    updateUI();
-    showView('home');
+function handleCreateUser() {
+    const input = document.getElementById('name-input');
+    if (!input.value) return;
+    appState.users.push({ name: input.value, best1: 0, best2: 1 });
+    localStorage.setItem('mouse_master_data', JSON.stringify(appState.users));
+    input.value = '';
+    refreshUserList();
 }
 
-function save() {
-    localStorage.setItem('mouse_users', JSON.stringify(state.users));
+function selectUser(index) {
+    appState.currentUser = appState.users[index];
+    document.getElementById('current-name-display').innerText = appState.currentUser.name;
+    showView('lobby');
 }
 
-// --- 遊戲 1：捕鼠特攻 (Reaction) ---
-let g1Interval;
-function startWhackGame() {
+/* --- 遊戲 1 邏輯 (捕鼠特攻) --- */
+let g1Data = { score: 0, gridSize: 5, timer: null };
+
+function initGame1() {
+    g1Data.score = 0;
+    g1Data.gridSize = 5;
     showView('game1');
-    let score = 0;
-    let gridSize = 5;
-    let speed = 1200;
-    const animals = ['🐀', '🐀', '🐀', '🐹', '🐰', '🐥']; // 增加老鼠機率
+    updateG1UI();
+    runG1Cycle();
+}
+
+function updateG1UI() {
+    document.getElementById('g1-score').innerText = g1Data.score;
+    document.getElementById('g1-level-text').innerText = `${g1Data.gridSize} x ${g1Data.gridSize}`;
+    document.getElementById('bar-fill-g1').style.width = (g1Data.score % 100) + '%';
+}
+
+function runG1Cycle() {
+    if (!appState.g1Active) return;
     
-    document.getElementById('g1-score').innerText = score;
     const grid = document.getElementById('g1-grid');
+    grid.style.setProperty('--grid-size', g1Data.gridSize);
+    grid.innerHTML = '';
     
-    function refreshGrid() {
-        grid.style.setProperty('--grid-size', gridSize);
-        grid.innerHTML = '';
-        for(let i=0; i<gridSize*gridSize; i++) {
-            const c = document.createElement('div');
-            c.className = 'cell';
-            c.onclick = () => {
-                if(c.innerText === '🐀') {
-                    score += 10;
-                    document.getElementById('g1-score').innerText = score;
-                    c.innerText = '💥';
-                    if(score % 50 === 0 && gridSize < 10) gridSize++; 
-                    if(score % 30 === 0) speed *= 0.9;
+    // 生成格子
+    for (let i=0; i<g1Data.gridSize * g1Data.gridSize; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.onclick = (e) => {
+            if (cell.innerText === '🐀') {
+                cell.classList.add('hit-effect');
+                g1Data.score += 10;
+                
+                // 檢查等級提升
+                if (g1Data.score > 0 && g1Data.score % 100 === 0 && g1Data.gridSize < 10) {
+                    g1Data.gridSize++;
                 }
-            };
-            grid.appendChild(c);
-        }
+                
+                updateG1UI();
+                clearTimeout(g1Data.timer);
+                setTimeout(runG1Cycle, 400); // 擊中後短暫停頓，增加打擊感
+            }
+        };
+        grid.appendChild(cell);
     }
 
-    refreshGrid();
-    g1Interval = setInterval(() => {
-        const cells = document.querySelectorAll('#g1-grid .cell');
-        cells.forEach(c => c.innerText = '');
-        const rand = Math.floor(Math.random() * cells.length);
-        cells[rand].innerText = animals[Math.floor(Math.random()*animals.length)];
+    // 隨機放老鼠
+    const cells = grid.querySelectorAll('.cell');
+    const targetIdx = Math.floor(Math.random() * cells.length);
+    cells[targetIdx].innerText = '🐀';
+
+    // 沒點擊時的循環
+    let speed = Math.max(600, 1500 - (g1Data.gridSize * 100)); 
+    g1Data.timer = setTimeout(() => {
+        if (appState.g1Active) runG1Cycle();
     }, speed);
 }
 
-// --- 遊戲 2：老鼠迷蹤 (Memory) ---
-let mazePath = [];
-let playerStep = 0;
-function startMazeGame() {
+/* --- 遊戲 2 邏輯 (老鼠迷蹤) --- */
+let g2Data = { level: 1, size: 5, lives: 3, path: [] };
+
+function initGame2() {
+    g2Data.level = 1;
+    g2Data.size = 5;
+    g2Data.lives = 3;
     showView('game2');
-    let size = 5;
-    let stepCount = 5;
-    
-    async function nextLevel() {
-        document.getElementById('g2-level').innerText = `Level: ${size}x${size}`;
-        const grid = document.getElementById('g2-grid');
-        grid.style.setProperty('--grid-size', size);
-        grid.innerHTML = '';
-        const cells = [];
-        for(let i=0; i<size; i++){
-            cells[i] = [];
-            for(let j=0; j<size; j++){
-                const c = document.createElement('div');
-                c.className = 'cell';
-                c.dataset.pos = `${i}-${j}`;
-                grid.appendChild(c);
-                cells[i][j] = c;
-            }
-        }
+    startG2Level();
+}
 
-        // 生成不回頭路徑 (DFS 簡化版)
-        mazePath = [];
-        let curr = {x:0, y:0};
-        mazePath.push("0-0");
-        for(let s=0; s<stepCount; s++) {
-            let nexts = [
-                {x:curr.x+1, y:curr.y}, {x:curr.x-1, y:curr.y},
-                {x:curr.x, y:curr.y+1}, {x:curr.x, y:curr.y-1}
-            ].filter(p => p.x>=0 && p.x<size && p.y>=0 && p.y<size && !mazePath.includes(`${p.x}-${p.y}`));
-            
-            if(nexts.length === 0) break;
-            curr = nexts[Math.floor(Math.random()*nexts.length)];
-            mazePath.push(`${curr.x}-${curr.y}`);
-        }
+async function startG2Level() {
+    const grid = document.getElementById('g2-grid');
+    grid.style.setProperty('--grid-size', g2Data.size);
+    grid.innerHTML = '';
+    document.getElementById('g2-lives-display').innerText = "❤️".repeat(g2Data.lives);
+    document.getElementById('g2-level-text').innerText = `Level ${g2Data.level}`;
+    document.getElementById('bar-fill-g2').style.width = ((g2Data.level % 5) * 20) + '%';
 
-        // 展示路徑
-        document.getElementById('maze-status').innerText = state.lang === 'zh' ? '記住路徑...' : 'Memorize...';
-        for(let p of mazePath) {
-            let cell = document.querySelector(`[data-pos="${p}"]`);
-            cell.innerText = '🐀';
-            cell.classList.add('path');
-            await new Promise(r => setTimeout(r, 600));
-            cell.innerText = '';
-            cell.classList.remove('path');
+    // 建立網格
+    for (let i=0; i<g2Data.size; i++) {
+        for (let j=0; j<g2Data.size; j++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.pos = `${i}-${j}`;
+            grid.appendChild(cell);
         }
-
-        // 玩家輸入
-        document.getElementById('maze-status').innerText = state.lang === 'zh' ? '請重畫！' : 'Your turn!';
-        playerStep = 0;
-        document.querySelectorAll('#g2-grid .cell').forEach(c => {
-            c.onclick = () => {
-                if(c.dataset.pos === mazePath[playerStep]) {
-                    c.classList.add('correct');
-                    playerStep++;
-                    if(playerStep === mazePath.length) {
-                        alert("Success!");
-                        stepCount++;
-                        if(stepCount % 3 === 0 && size < 10) size++;
-                        nextLevel();
-                    }
-                } else {
-                    c.classList.add('wrong');
-                    alert("Wrong! Try again.");
-                    nextLevel();
-                }
-            };
-        });
     }
-    nextLevel();
+
+    // 生成不重複路徑
+    g2Data.path = ["0-0"];
+    let curr = {x:0, y:0};
+    let steps = g2Data.level + 3;
+    for (let s=0; s<steps; s++) {
+        let n = [{x:curr.x+1, y:curr.y}, {x:curr.x-1, y:curr.y}, {x:curr.x, y:curr.y+1}, {x:curr.x, y:curr.y-1}]
+                .filter(p => p.x>=0 && p.x<g2Data.size && p.y>=0 && p.y<g2Data.size && !g2Data.path.includes(`${p.x}-${p.y}`));
+        if (n.length === 0) break;
+        curr = n[Math.floor(Math.random()*n.length)];
+        g2Data.path.push(`${curr.x}-${curr.y}`);
+    }
+
+    // 展示路徑 (播放給玩家看)
+    for (let p of g2Data.path) {
+        let target = grid.querySelector(`[data-pos="${p}"]`);
+        target.innerText = '🐀';
+        target.style.background = '#444';
+        await new Promise(r => setTimeout(r, 600));
+        target.innerText = '';
+        target.style.background = '';
+    }
+
+    // 玩家輸入
+    let playerIdx = 0;
+    grid.querySelectorAll('.cell').forEach(c => {
+        c.onclick = () => {
+            if (c.dataset.pos === g2Data.path[playerIdx]) {
+                c.innerText = '🐀';
+                c.style.background = '#4CAF50';
+                playerIdx++;
+                if (playerIdx === g2Data.path.length) {
+                    g2Data.level++;
+                    if (g2Data.level % 3 === 0 && g2Data.size < 10) g2Data.size++;
+                    setTimeout(startG2Level, 600);
+                }
+            } else {
+                // 點錯了
+                g2Data.lives--;
+                c.style.background = '#F44336';
+                if (g2Data.lives <= 0) {
+                    alert("Game Over! Restarting Level...");
+                    g2Data.lives = 3;
+                }
+                setTimeout(startG2Level, 600);
+            }
+        };
+    });
 }
 
-function stopAllTimers() {
-    clearInterval(g1Interval);
+function quitGame() {
+    appState.g1Active = false;
+    clearTimeout(g1Data.timer);
+    showView('lobby');
 }
 
-window.onload = init;
-renderUserList();
+/* --- 啟動 --- */
+window.onload = () => {
+    refreshUserList();
+    toggleLanguage(); // 初始化語言顯示
+};
 </script>
+
 </body>
 </html>
