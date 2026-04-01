@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>鼠鼠大作戰 - 完美調試版</title>
+    <title>鼠鼠大作戰 - 長者友善增強版</title>
     <style>
         :root {
-            --bg: #000000;
+            --bg: #000;
             --text: #FFFF00;
             --accent: #FFCC00;
-            --card-bg: #1A1A1A;
             --grid-size: 5;
             --grid-px: 450px;
         }
@@ -23,22 +22,16 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            user-select: none;
-        }
-
-        @keyframes hitZoom {
-            0% { transform: scale(1); }
-            50% { transform: scale(2.2); background: #FFF; z-index: 99; color: #000; border-radius: 50%; }
-            100% { transform: scale(1); }
         }
 
         header { width: 100%; padding: 15px; background: #222; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
         .view { display: none; width: 95%; max-width: 600px; padding: 20px; text-align: center; box-sizing: border-box; }
         .view.active { display: block; }
 
-        .progress-wrapper { width: 100%; background: #333; border-radius: 20px; height: 25px; margin: 15px 0; border: 2px solid var(--accent); overflow: hidden; position: relative; }
-        #bar-fill-g1, #bar-fill-g2 { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
-        .progress-text { position: absolute; width: 100%; text-align: center; color: #fff; font-size: 14px; font-weight: bold; line-height: 25px; z-index: 2; }
+        /* 模式切換器樣式 */
+        .mode-switch { background: #333; padding: 15px; border-radius: 10px; margin: 10px 0; border: 2px solid var(--accent); }
+        .speed-control { margin: 20px 0; background: #222; padding: 10px; border-radius: 10px; }
+        input[type=range] { width: 80%; cursor: pointer; }
 
         .game-grid {
             display: grid;
@@ -51,76 +44,69 @@
             background: #222;
             padding: 10px;
             border-radius: 10px;
-            box-sizing: border-box;
         }
 
         .cell {
-            background: #333;
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            font-size: calc(var(--grid-px) / var(--grid-size) * 0.65);
-            transition: background 0.2s;
+            background: #333; border-radius: 8px; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; font-size: calc(var(--grid-px) / var(--grid-size) * 0.65);
         }
 
-        .hit-effect { animation: hitZoom 0.4s forwards; }
-        .cell.correct { background: #4CAF50 !important; color: white; }
+        .cell.correct { background: #4CAF50 !important; }
         .cell.wrong { background: #F44336 !important; }
+        @keyframes hitZoom { 0% { transform: scale(1); } 50% { transform: scale(2); background: white; } 100% { transform: scale(1); } }
+        .hit-effect { animation: hitZoom 0.4s forwards; }
 
-        button { background: var(--accent); color: #000; border: none; padding: 15px 30px; font-size: 1.5rem; font-weight: bold; border-radius: 12px; margin: 10px; cursor: pointer; }
-        .profile-item { background: var(--card-bg); border: 3px solid var(--accent); padding: 20px; margin: 15px 0; border-radius: 15px; font-size: 1.8rem; }
-        .rule-box { text-align: left; background: #111; padding: 20px; border-radius: 12px; border-left: 8px solid var(--accent); margin: 20px 0; font-size: 1.2rem; line-height: 1.5; }
-        .hearts { font-size: 2.5rem; color: #ff4444; margin: 10px; }
+        button { background: var(--accent); color: #000; border: none; padding: 12px 25px; font-size: 1.2rem; font-weight: bold; border-radius: 10px; margin: 5px; cursor: pointer; }
+        .profile-item { background: #1A1A1A; border: 3px solid var(--accent); padding: 15px; margin: 10px 0; border-radius: 12px; font-size: 1.5rem; }
+        .hearts { font-size: 2rem; color: #ff4444; }
     </style>
 </head>
 <body>
 
 <header>
     <div id="top-user-name">👤 <span id="current-name-display">---</span></div>
-    <button onclick="toggleLanguage()" style="font-size: 1rem; padding: 5px 15px;">繁 / EN</button>
+    <button onclick="toggleLanguage()" style="font-size: 0.9rem;">ZH/EN</button>
 </header>
 
 <section id="view-profile" class="view active">
-    <h1 class="lang" data-zh="鼠鼠訓練營" data-en="Mouse Trainer">鼠鼠訓練營</h1>
+    <h1>鼠鼠訓練營</h1>
     <div id="user-list-container"></div>
-    <div style="margin-top: 30px;">
-        <input type="text" id="name-input" placeholder="Name" style="font-size: 1.5rem; padding: 10px; width: 60%; border-radius: 10px;">
-        <button onclick="handleCreateUser()" class="lang" data-zh="新增" data-en="Add">新增</button>
-    </div>
+    <input type="text" id="name-input" placeholder="Name" style="font-size: 1.2rem; padding: 10px; width: 50%;">
+    <button onclick="handleCreateUser()">新增</button>
 </section>
 
 <section id="view-lobby" class="view">
-    <h1 class="lang" data-zh="遊戲大廳" data-en="Game Lobby">遊戲大廳</h1>
-    <div class="rule-box">
-        <p><strong>1. ⚡ <span class="lang" data-zh="捕鼠特攻" data-en="Rat Catcher">捕鼠特攻</span>:</strong></p>
-        <p class="lang" data-zh="只點擊 🐀！出現其他動物時請忽視。每滿 100 分網格會變大。" data-en="Only click 🐀! Ignore other animals. Grid grows every 100 points.">只點擊 🐀！出現其他動物時請忽視。每滿 100 分網格會變大。</p>
-        <hr>
-        <p><strong>2. 🧠 <span class="lang" data-zh="老鼠迷蹤" data-en="Mouse Maze">老鼠迷蹤</span>:</strong></p>
-        <p class="lang" data-zh="記住路徑。點錯時請在原位重試，每關有 3 次機會。" data-en="Remember path. Retry at same spot if wrong. 3 lives per level.">記住路徑。點錯時請在原位重試，每關有 3 次機會。</p>
+    <h2 class="lang" data-zh="遊戲設定" data-en="Game Lobby">遊戲設定</h2>
+    
+    <div class="mode-switch">
+        <label style="font-size: 1.5rem; display: block; margin-bottom: 10px;">
+            <input type="checkbox" id="elderly-mode-chk" style="transform: scale(2); margin-right: 15px;">
+            <span class="lang" data-zh="長者模式 (更輕鬆)" data-en="Elderly Mode (Easier)">長者模式 (更輕鬆)</span>
+        </label>
     </div>
-    <button onclick="initGame1()" style="width: 85%;">⚡ <span class="lang" data-zh="開始捕鼠" data-en="Start Catching">開始捕鼠</span></button>
-    <button onclick="initGame2()" style="width: 85%;">🧠 <span class="lang" data-zh="記憶挑戰" data-en="Memory Challenge">記憶挑戰</span></button>
-    <button onclick="showView('profile')" style="background: #444; color: #ccc; margin-top: 20px;">Logout</button>
+
+    <div class="speed-control">
+        <label class="lang" data-zh="老鼠移動速度" data-en="Mouse Movement Speed">老鼠移動速度</label><br>
+        <input type="range" id="speed-range" min="300" max="1500" value="800" step="100">
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; width: 80%; margin: auto;">
+            <span class="lang" data-zh="快" data-en="Fast">快</span>
+            <span class="lang" data-zh="慢" data-en="Slow">慢</span>
+        </div>
+    </div>
+
+    <button onclick="initGame1()" style="width: 80%;">⚡ <span class="lang" data-zh="捕鼠特攻" data-en="Rat Catcher">捕鼠特攻</span></button>
+    <button onclick="initGame2()" style="width: 80%;">🧠 <span class="lang" data-zh="老鼠迷蹤" data-en="Mouse Maze">老鼠迷蹤</span></button>
 </section>
 
 <section id="view-game1" class="view">
-    <div class="stat-bar" style="font-size: 2rem;">🐀 Score: <span id="g1-score">0</span></div>
-    <div class="progress-wrapper">
-        <div class="progress-text"><span id="g1-level-text">5x5</span></div>
-        <div id="bar-fill-g1"></div>
-    </div>
+    <div style="font-size: 1.5rem;">Score: <span id="g1-score">0</span></div>
     <div id="g1-grid" class="game-grid"></div>
     <button onclick="quitGame()">Exit</button>
 </section>
 
 <section id="view-game2" class="view">
     <div id="g2-lives-display" class="hearts">❤️❤️❤️</div>
-    <div class="progress-wrapper">
-        <div class="progress-text"><span id="g2-level-text">Level 1</span></div>
-        <div id="bar-fill-g2"></div>
-    </div>
+    <div style="margin-bottom: 10px;" id="g2-level-text">Level 1</div>
     <div id="g2-grid" class="game-grid"></div>
     <button onclick="quitGame()">Exit</button>
 </section>
@@ -128,7 +114,7 @@
 <script>
 let appState = {
     lang: 'zh',
-    users: JSON.parse(localStorage.getItem('mouse_final_v1') || '[]'),
+    users: JSON.parse(localStorage.getItem('mouse_v2_data') || '[]'),
     currentUser: null,
     g1Active: false
 };
@@ -147,111 +133,91 @@ function toggleLanguage() {
 /* --- 用戶管理 --- */
 function refreshUserList() {
     const container = document.getElementById('user-list-container');
-    container.innerHTML = appState.users.map((u, i) => `
-        <div class="profile-item" onclick="selectUser(${i})">👤 ${u.name}</div>
-    `).join('');
+    container.innerHTML = appState.users.map((u, i) => `<div class="profile-item" onclick="selectUser(${i})">👤 ${u.name}</div>`).join('');
 }
-
 function handleCreateUser() {
     const input = document.getElementById('name-input');
     if (!input.value) return;
-    appState.users.push({ name: input.value, best1: 0, best2: 1 });
-    localStorage.setItem('mouse_final_v1', JSON.stringify(appState.users));
-    input.value = '';
-    refreshUserList();
+    appState.users.push({ name: input.value });
+    localStorage.setItem('mouse_v2_data', JSON.stringify(appState.users));
+    input.value = ''; refreshUserList();
 }
-
-function selectUser(index) {
-    appState.currentUser = appState.users[index];
+function selectUser(i) {
+    appState.currentUser = appState.users[i];
     document.getElementById('current-name-display').innerText = appState.currentUser.name;
     showView('lobby');
 }
 
-/* --- Game 1: 捕鼠特攻 (修復干擾項) --- */
+/* --- Game 1: 捕鼠特攻 --- */
 let g1Data = { score: 0, gridSize: 5, timer: null };
-const decoys = ['🐹', '🐰', '🐥', '🐱', '🐶'];
-
 function initGame1() {
     g1Data.score = 0; g1Data.gridSize = 5;
-    showView('game1');
-    updateG1UI();
-    runG1Cycle();
+    showView('game1'); runG1Cycle();
 }
-
-function updateG1UI() {
-    document.getElementById('g1-score').innerText = g1Data.score;
-    document.getElementById('g1-level-text').innerText = `${g1Data.gridSize} x ${g1Data.gridSize}`;
-    document.getElementById('bar-fill-g1').style.width = (g1Data.score % 100) + '%';
-}
-
 function runG1Cycle() {
     if (!appState.g1Active) return;
     const grid = document.getElementById('g1-grid');
     grid.style.setProperty('--grid-size', g1Data.gridSize);
     grid.innerHTML = '';
-    
-    for (let i=0; i<g1Data.gridSize * g1Data.gridSize; i++) {
+    const isElderly = document.getElementById('elderly-mode-chk').checked;
+
+    for (let i=0; i<g1Data.gridSize**2; i++) {
         const cell = document.createElement('div');
         cell.className = 'cell';
         cell.onclick = () => {
             if (cell.innerText === '🐀') {
-                cell.classList.add('hit-effect');
-                g1Data.score += 10;
+                cell.classList.add('hit-effect'); g1Data.score += 10;
                 if (g1Data.score % 100 === 0 && g1Data.gridSize < 10) g1Data.gridSize++;
-                updateG1UI();
-                clearTimeout(g1Data.timer);
-                setTimeout(runG1Cycle, 400);
+                document.getElementById('g1-score').innerText = g1Data.score;
+                clearTimeout(g1Data.timer); setTimeout(runG1Cycle, 400);
             }
         };
         grid.appendChild(cell);
     }
-
     const cells = grid.querySelectorAll('.cell');
-    // 隨機放老鼠
     cells[Math.floor(Math.random() * cells.length)].innerText = '🐀';
-    // 隨機放干擾項 (Grid 越大干擾越多)
-    for(let j=0; j < g1Data.gridSize; j++) {
-        let idx = Math.floor(Math.random() * cells.length);
-        if(cells[idx].innerText === '') cells[idx].innerText = decoys[Math.floor(Math.random()*decoys.length)];
+    
+    // 長者模式 10 秒，普通模式 1.5 秒起隨難度縮短
+    let delay = isElderly ? 10000 : Math.max(700, 1500 - (g1Data.gridSize * 100));
+    g1Data.timer = setTimeout(() => { if (appState.g1Active) runG1Cycle(); }, delay);
+}
+
+/* --- Game 2: 老鼠迷蹤 --- */
+let g2Data = { level: 1, size: 5, lives: 3, path: [], playerIdx: 0, isShowing: false };
+function initGame2() {
+    g2Data.level = 1; g2Data.size = 5;
+    showView('game2'); startG2Level();
+}
+async function startG2Level() {
+    g2Data.isShowing = true; g2Data.playerIdx = 0;
+    const isElderly = document.getElementById('elderly-mode-chk').checked;
+    const speed = parseInt(document.getElementById('speed-range').value);
+
+    // 計算重試次數
+    let routeLen = g2Data.level + 3;
+    if (isElderly) {
+        g2Data.lives = g2Data.size * g2Data.size; // 最大格子數
+    } else {
+        g2Data.lives = Math.max(2, Math.floor(routeLen * 0.2)); // 20% 路徑長度，最小 2
     }
 
-    g1Data.timer = setTimeout(() => { if (appState.g1Active) runG1Cycle(); }, 1500 - (g1Data.gridSize * 80));
-}
-
-/* --- Game 2: 老鼠迷蹤 (修復錯誤重試機制) --- */
-let g2Data = { level: 1, size: 5, lives: 3, path: [], playerIdx: 0, isShowing: false };
-
-function initGame2() {
-    g2Data.level = 1; g2Data.size = 5; g2Data.lives = 3;
-    showView('game2');
-    startG2Level();
-}
-
-async function startG2Level() {
-    g2Data.isShowing = true;
-    g2Data.playerIdx = 0;
     const grid = document.getElementById('g2-grid');
     grid.style.setProperty('--grid-size', g2Data.size);
     grid.innerHTML = '';
-    document.getElementById('g2-lives-display').innerText = "❤️".repeat(g2Data.lives);
-    document.getElementById('g2-level-text').innerText = `Level ${g2Data.level}`;
-    document.getElementById('bar-fill-g2').style.width = ((g2Data.level % 5) * 20) + '%';
+    document.getElementById('g2-lives-display').innerText = isElderly ? "♾️" : "❤️".repeat(g2Data.lives);
+    document.getElementById('g2-level-text').innerText = `Level ${g2Data.level} (Lives: ${g2Data.lives})`;
 
-    // 建立空網格
-    for (let i=0; i<g2Data.size; i++) {
-        for (let j=0; j<g2Data.size; j++) {
-            const cell = document.createElement('div');
-            cell.className = 'cell';
-            cell.dataset.pos = `${i}-${j}`;
-            grid.appendChild(cell);
-        }
+    for (let i=0; i<g2Data.size**2; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.pos = `${Math.floor(i/g2Data.size)}-${i%g2Data.size}`;
+        grid.appendChild(cell);
     }
 
-    // 生成新路徑
+    // 生成路徑
     g2Data.path = ["0-0"];
     let curr = {x:0, y:0};
-    let steps = Math.min(g2Data.level + 2, 15);
-    for (let s=0; s<steps; s++) {
+    for (let s=0; s<routeLen; s++) {
         let n = [{x:curr.x+1, y:curr.y}, {x:curr.x-1, y:curr.y}, {x:curr.x, y:curr.y+1}, {x:curr.x, y:curr.y-1}]
                 .filter(p => p.x>=0 && p.x<g2Data.size && p.y>=0 && p.y<g2Data.size && !g2Data.path.includes(`${p.x}-${p.y}`));
         if (n.length === 0) break;
@@ -259,62 +225,44 @@ async function startG2Level() {
         g2Data.path.push(`${curr.x}-${curr.y}`);
     }
 
-    // 播放路徑
+    // 播放
     for (let p of g2Data.path) {
         let target = grid.querySelector(`[data-pos="${p}"]`);
         target.innerText = '🐀';
-        await new Promise(r => setTimeout(r, 600));
+        await new Promise(r => setTimeout(r, speed)); // 使用拉桿速度
         target.innerText = '';
     }
     g2Data.isShowing = false;
-    setupPlayerInput();
+    setupG2Input();
 }
 
-function setupPlayerInput() {
+function setupG2Input() {
     const grid = document.getElementById('g2-grid');
     grid.querySelectorAll('.cell').forEach(c => {
         c.onclick = () => {
             if (g2Data.isShowing) return;
-            
-            // 點擊正確
             if (c.dataset.pos === g2Data.path[g2Data.playerIdx]) {
-                c.innerText = '🐀';
-                c.classList.add('correct');
+                c.innerText = '🐀'; c.classList.add('correct');
                 g2Data.playerIdx++;
                 if (g2Data.playerIdx === g2Data.path.length) {
                     g2Data.level++;
                     if (g2Data.level % 3 === 0 && g2Data.size < 10) g2Data.size++;
                     setTimeout(startG2Level, 800);
                 }
-            } 
-            // 點擊錯誤
-            else {
+            } else {
                 g2Data.lives--;
                 c.classList.add('wrong');
-                document.getElementById('g2-lives-display').innerText = "❤️".repeat(g2Data.lives);
-                
+                document.getElementById('g2-lives-display').innerText = g2Data.lives > 10 ? "♾️" : "❤️".repeat(g2Data.lives);
                 setTimeout(() => {
                     c.classList.remove('wrong');
-                    if (g2Data.lives <= 0) {
-                        alert("Game Over! Try this level again.");
-                        g2Data.lives = 3;
-                        startG2Level(); // 生命耗盡，重洗路徑
-                    } else {
-                        // 還有生命：保持已正確的格子，讓玩家在原位重試
-                        // 不需要額外邏輯，因為 playerIdx 沒變
-                    }
-                }, 500);
+                    if (g2Data.lives <= 0) { alert("Try Again!"); startG2Level(); }
+                }, 400);
             }
         };
     });
 }
 
-function quitGame() {
-    appState.g1Active = false;
-    clearTimeout(g1Data.timer);
-    showView('lobby');
-}
-
+function quitGame() { appState.g1Active = false; clearTimeout(g1Data.timer); showView('lobby'); }
 window.onload = () => { refreshUserList(); toggleLanguage(); };
 </script>
 </body>
