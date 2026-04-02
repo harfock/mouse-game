@@ -155,12 +155,24 @@
 g1data
 
 <section id="view-game2" class="view">
-    <div id="g2-hint" class="hint-text">💡 記住路徑...</div>
-    <div><label><input type="checkbox" id="g2-elderly-chk"> 長者模式</label> | <span id="g2-lives-display">❤️❤️❤️</span></div>
-    <div class="progress-wrapper"><div id="bar-fill-g2" class="bar-fill"></div></div>
+    <div style="width: 95%; background: #1A1A1A; border: 2px solid #4CAF50; padding: 12px; border-radius: 12px; margin-bottom: 10px;">
+        <div id="g2-hint" style="font-size: 1.3rem; font-weight: bold; color: #4CAF50;">💡 記住路徑...</div>
+        
+        <div style="margin: 8px 0; color: #FFCC00; font-size: 1.1rem; font-weight: bold;">
+            已協助老鼠奔向芝士 <span id="g2-total-steps" style="font-size: 1.5rem; color: #FFF;">0</span> 步
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; margin-top: 5px;">
+            <span>速度: <input type="range" id="g2-speed-range" min="200" max="1200" value="700" style="width: 80px;"></span>
+            <span id="g2-lives-display" class="hearts">❤️❤️❤️</span>
+        </div>
+    </div>
+
     <div id="g2-grid" class="game-grid"></div>
-    <button onclick="quitGame()">返回大廳</button>
+    
+    <button onclick="quitGame()" style="margin-top: 10px; background: #333; color: #ccc;">返回大廳</button>
 </section>
+
 
 <script>
 /* --- 核心邏輯與用戶管理 --- */
@@ -349,36 +361,32 @@ function endGame1() {
 
 
 
-/* --- 🛠️ 遊戲 2：老鼠迷蹤 (修復重疊 Bug 版) --- */
+/* --- 🛠️ 遊戲 2：芝士路徑與速度控制 --- */
 let g2Data = { 
     level: 1, size: 5, path: [], playerIdx: 0, 
-    isShowing: false,
-    currentLevelId: 0 // 新增：用來標記當前關卡序號，防止舊循環干擾
+    isShowing: false, currentLevelId: 0,
+    totalSteps: 0 // 累計步數
 };
 
 function initGame2() {
     g2Data.level = 1;
     g2Data.size = 5;
-    g2Data.currentLevelId = 0; // 重置計數
+    g2Data.totalSteps = 0;
+    g2Data.currentLevelId = 0;
+    document.getElementById('g2-total-steps').innerText = "0";
     showView('game2');
     startG2Level();
 }
 
 async function startG2Level() {
-    // 每次開始新關卡，序號 +1
     const myLevelId = ++g2Data.currentLevelId;
-    
     g2Data.playerIdx = 0;
     g2Data.isShowing = true;
     
-    const isElderly = document.getElementById('g2-elderly-chk').checked;
     const grid = document.getElementById('g2-grid');
     document.documentElement.style.setProperty('--grid-size', g2Data.size);
     grid.innerHTML = '';
     
-    document.getElementById('g2-lives-display').innerText = isElderly ? "♾️" : "❤️❤️❤️";
-    document.getElementById('bar-fill-g2').style.width = ((g2Data.level % 5) * 20) + "%";
-
     // 建立網格
     for (let i=0; i<g2Data.size**2; i++) {
         const cell = document.createElement('div');
@@ -387,75 +395,90 @@ async function startG2Level() {
         grid.appendChild(cell);
     }
 
-    // 生成隨機路徑 (不重複)
+    // 1. 生成路徑
     g2Data.path = ["0-0"];
     let curr = {x:0, y:0};
-    const pathLength = g2Data.level + 3;
+    const pathLength = g2Data.level + 2; // 路徑隨等級增長
     
     for (let s=0; s < pathLength; s++) {
-        let neighbors = [
-            {x:curr.x+1, y:curr.y}, {x:curr.x-1, y:curr.y}, 
-            {x:curr.x, y:curr.y+1}, {x:curr.x, y:curr.y-1}
-        ].filter(p => 
-            p.x>=0 && p.x<g2Data.size && p.y>=0 && p.y<g2Data.size && 
-            !g2Data.path.includes(`${p.x}-${p.y}`)
-        );
-        if (neighbors.length === 0) break;
-        curr = neighbors[Math.floor(Math.random()*neighbors.length)];
+        let n = [{x:curr.x+1, y:curr.y}, {x:curr.x-1, y:curr.y}, {x:curr.x, y:curr.y+1}, {x:curr.x, y:curr.y-1}]
+                .filter(p => p.x>=0 && p.x<g2Data.size && p.y>=0 && p.y<g2Data.size && !g2Data.path.includes(`${p.x}-${p.y}`));
+        if (n.length === 0) break;
+        curr = n[Math.floor(Math.random()*n.length)];
         g2Data.path.push(`${curr.x}-${curr.y}`);
     }
 
-    // 顯示路徑
-    document.getElementById('g2-hint').innerText = "👀 ...";
+    // 2. 放置終點芝士 (在路徑最後一格的鄰近空位，或直接顯示在最後一格)
+    const lastPos = g2Data.path[g2Data.path.length - 1];
+    const cheeseCell = grid.querySelector(`[data-pos="${lastPos}"]`);
+    
+    // 3. 播放路徑
+    const speed = 1400 - document.getElementById('g2-speed-range').value; // 滑動條反轉邏輯
+    document.getElementById('g2-hint').innerText = "👀 記住路線...";
+    
     for (let p of g2Data.path) {
-        // 重要：如果當前的 LevelId 已經不是最新的，說明遊戲已重開，立即終止此函數
-        if (myLevelId !== g2Data.currentLevelId || !appState.viewActive === 'game2') return;
-
+        if (myLevelId !== g2Data.currentLevelId) return;
         let t = grid.querySelector(`[data-pos="${p}"]`);
         if(t) {
             t.innerText = '🐀';
-            await new Promise(r => setTimeout(r, 800));
+            await new Promise(r => setTimeout(r, speed));
             t.innerText = '';
-            // 消失後也要小等一下，才有節奏感
-            await new Promise(r => setTimeout(r, 100));
         }
     }
 
-    // 檢查點：確保播完後依然是同一個關卡
-    if (myLevelId !== g2Data.currentLevelId) return;
+    // 預告終點位置：閃爍一下芝士
+    cheeseCell.innerText = '🧀';
+    await new Promise(r => setTimeout(r, 500));
+    cheeseCell.innerText = '';
 
-    document.getElementById('g2-hint').innerText = "👉 GO!";
+    document.getElementById('g2-hint').innerText = "👉 請送老鼠去吃芝士！";
     g2Data.isShowing = false;
 
-    // 綁定點擊事件
+    // 4. 用戶點擊邏輯
     document.querySelectorAll('#g2-grid .cell').forEach(c => {
-        c.onclick = (e) => {
+        c.onclick = async (e) => {
             e.preventDefault();
             if (g2Data.isShowing) return;
             
             const pos = c.dataset.pos;
             if (pos === g2Data.path[g2Data.playerIdx]) {
-                c.innerText = '🐀';
+                // 點對了
+                c.innerText = '🐾'; // 留下腳印
                 c.classList.add('correct');
                 g2Data.playerIdx++;
+                g2Data.totalSteps++;
+                document.getElementById('g2-total-steps').innerText = g2Data.totalSteps;
                 
+                // 成功抵達終點
                 if (g2Data.playerIdx === g2Data.path.length) {
-                    g2Data.level++;
-                    if (g2Data.level % 3 === 0 && g2Data.size < 8) g2Data.size++;
+                    g2Data.isShowing = true; // 鎖定點擊
+                    document.getElementById('g2-hint').innerText = "🎉 成功抵達！";
+                    
+                    // --- 勝利遊行動畫 ---
+                    for (let p of g2Data.path) {
+                        let t = grid.querySelector(`[data-pos="${p}"]`);
+                        t.innerText = '🐀';
+                        t.style.background = "#555";
+                        await new Promise(r => setTimeout(r, 150));
+                    }
+                    cheeseCell.innerText = '😋'; // 老鼠吃到芝士的表情
+                    
                     setTimeout(() => {
+                        g2Data.level++;
+                        if (g2Data.level % 3 === 0 && g2Data.size < 8) g2Data.size++;
                         if (myLevelId === g2Data.currentLevelId) startG2Level();
-                    }, 600);
+                    }, 1000);
                 }
             } else {
+                // 點錯了
                 c.classList.add('wrong');
-                // 點錯直接重播當前關卡
-                setTimeout(() => {
-                    if (myLevelId === g2Data.currentLevelId) startG2Level();
-                }, 400);
+                document.getElementById('g2-hint').innerText = "❌ 迷路了，重新觀察！";
+                setTimeout(() => { if (myLevelId === g2Data.currentLevelId) startG2Level(); }, 500);
             }
         };
     });
 }
+
 
 // 修改 quitGame 確保完全切斷 Game 2 的非同步鏈
 function quitGame() {
