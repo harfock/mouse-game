@@ -130,15 +130,23 @@
 
 <section id="view-game1" class="view">
     <div style="width: 95%; background: #1A1A1A; border: 2px solid var(--accent); padding: 12px; border-radius: 12px; margin-bottom: 10px;">
-        <div class="lang" data-zh="⚡ 看到 🐀 加 10 分，點錯扣 5 分！" data-en="⚡ 🐀 +10 pts, Others -5 pts!" style="font-size: 1.5rem; font-weight: bold; color: var(--accent); line-height: 1.2;">
-            ⚡ 捉到 🐀 加 10 分，捉到其他動物扣 5 分！
+        <div class="lang" data-zh="⚡ 捉到 🐀 加 10 分，其他扣 5 分！" data-en="⚡ 🐀 +10 pts, Others -5 pts!" style="font-size: 1.4rem; font-weight: bold; color: var(--accent); line-height: 1.2;">
+            ⚡ 捉到 🐀 加 10 分，其他扣 5 分！
         </div>
-        <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 1.2rem; font-weight: bold;">
+        
+        <div style="margin: 8px 0; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.1rem; color: #4CAF50;">
+            <input type="checkbox" id="g1-elderly-chk" style="width: 20px; height: 20px;">
+            <label for="g1-elderly-chk">🐢 長輩模式 (速度較慢)</label>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 1.2rem; font-weight: bold;">
             <span style="color: #FF4444;">⏱️ <span id="g1-timer">45</span>s</span>
             <span>🏆 Best: <span id="g1-best">0</span></span>
             <span style="color: #FFFF00;">⭐ <span id="g1-score">0</span></span>
         </div>
     </div>
+    
+
 
     <div id="g1-grid" class="game-grid"></div>
 
@@ -152,7 +160,7 @@
     <button onclick="quitGame()" style="margin-top: 8px; background: #222; color: #888; font-size: 0.9rem;">放棄結束 / Quit</button>
 </section>
 
-g1data
+
 
 <section id="view-game2" class="view">
     <div style="width: 95%; background: #1A1A1A; border: 2px solid #4CAF50; padding: 10px; border-radius: 12px; margin-bottom: 10px;">
@@ -284,27 +292,23 @@ function runG1Cycle() {
     document.documentElement.style.setProperty('--grid-size', g1Data.gridSize);
     grid.innerHTML = '';
 
+    // [新增] 建立網格與點擊事件邏輯 (保持原樣)
     for (let i=0; i<g1Data.gridSize**2; i++) {
         const cell = document.createElement('div');
         cell.className = 'cell';
         cell.onclick = (e) => {
             e.preventDefault();
             if (!cell.innerText) return;
-
             if (cell.innerText === '🐀') {
                 cell.classList.add('hit-effect');
-                g1Data.score += 10; // 加 10 分
+                g1Data.score += 10;
                 g1Data.historyMice += '🐀';
                 document.getElementById('g1-collection-mice').innerText = g1Data.historyMice;
-                
-                // 根據得分提升網格難度
                 if (g1Data.score > 0 && g1Data.score % 100 === 0 && g1Data.gridSize < 8) g1Data.gridSize++;
-                
                 document.getElementById('g1-score').innerText = g1Data.score;
                 clearTimeout(g1Data.timer); 
                 setTimeout(runG1Cycle, 150);
             } else {
-                // 點到其他動物扣 5 分
                 g1Data.score = Math.max(0, g1Data.score - 5);
                 g1Data.historyOthers += cell.innerText;
                 document.getElementById('g1-collection-others').innerText = g1Data.historyOthers;
@@ -316,13 +320,10 @@ function runG1Cycle() {
         grid.appendChild(cell);
     }
 
+    // [新增] 放置老鼠與干擾物邏輯 (保持原樣)
     const cells = grid.querySelectorAll('.cell');
-    // 放置目標老鼠
     cells[Math.floor(Math.random() * cells.length)].innerText = '🐀';
-    
-    // 放置干擾物：隨著難度（gridSize）提升，放置更多干擾物
-    // 等級越高，比例越高
-    let decoyCount = Math.floor((g1Data.gridSize ** 2) * 0.8); 
+    let decoyCount = Math.floor((g1Data.gridSize ** 2) * 0.4); // 建議調回 0.4 較平衡
     for(let d=0; d < decoyCount; d++){
         let idx = Math.floor(Math.random() * cells.length);
         if(cells[idx].innerText === '') {
@@ -330,11 +331,20 @@ function runG1Cycle() {
         }
     }
 
-    const isElderly = document.getElementById('g1-elderly-chk').checked;
-    // 鎖定反應速度，不讓它快到不合理
+    // --- [關鍵修改處] ---
+    [span_3](start_span)// 1. 安全讀取 Checkbox 狀態，避免 null 報錯[span_3](end_span)
+    const elderlyBtn = document.getElementById('g1-elderly-chk');
+    const isElderly = elderlyBtn ? elderlyBtn.checked : false; 
+
+    [span_4](start_span)// 2. 根據模式計算消失速度：長輩模式 5 秒，正常模式 0.85 ~ 2 秒[span_4](end_span)
     let delay = isElderly ? 5000 : Math.max(850, 2000 - (g1Data.gridSize * 150));
-    g1Data.timer = setTimeout(() => { if (appState.g1Active) runG1Cycle(); }, delay);
+
+    [span_5](start_span)// 3. 設定下一次循環[span_5](end_span)
+    g1Data.timer = setTimeout(() => { 
+        if (appState.g1Active) runG1Cycle(); 
+    }, delay);
 }
+
 
 function endGame1() {
     appState.g1Active = false;
@@ -366,6 +376,19 @@ let g2Data = {
     isShowing: false, currentLevelId: 0,
     totalSteps: 0, cheesePos: "" 
 };
+
+function initGame2() {
+    g2Data.level = 1;
+    g2Data.size = 5;
+    g2Data.totalSteps = 0;
+    g2Data.currentLevelId = 0;
+    // 重置介面顯示
+    const stepsEl = document.getElementById('g2-total-steps');
+    if (stepsEl) stepsEl.innerText = "0";
+    
+    showView('game2'); // 切換到遊戲 2 畫面
+    startG2Level();    // 開始生成路徑
+}
 
 async function startG2Level() {
     const myLevelId = ++g2Data.currentLevelId;
