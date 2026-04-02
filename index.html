@@ -83,12 +83,32 @@
 
 <section id="view-profile" class="view active">
     <h1 class="lang" data-zh="鼠鼠訓練營" data-en="Mouse Academy">鼠鼠訓練營</h1>
-    <div id="user-list-container" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
-    <div style="margin-top: 20px;">
-        <input type="text" id="name-input" placeholder="Name" style="padding: 10px; font-size: 1.1rem; width: 150px; border-radius: 8px;">
-        <button onclick="handleCreateUser()" class="lang" data-zh="新增" data-en="Add">新增</button>
+    
+    <div class="rule-card" style="border-left: 5px solid #FFCC00; background: #222;">
+        <p style="margin: 5px 0;"><strong>📖 如何開始：</strong></p>
+        <ol style="padding-left: 20px; text-align: left; font-size: 0.9rem;">
+            <li>在下方新增或選擇你的用戶。</li>
+            <li>點擊用戶旁的 ▶️ 按鈕。</li>
+            <li>選擇 ⚡ (反應) 或 🧠 (記憶) 進行訓練。</li>
+        </ol>
+    </div>
+
+    <div id="user-list-container" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        </div>
+
+    <div style="margin-top: 20px; padding: 15px; background: #111; border-radius: 12px; border: 1px dashed #555;">
+        <input type="text" id="name-input" placeholder="輸入名字..." style="padding: 10px; font-size: 1.1rem; width: 140px; border-radius: 8px; border: none; background: #222; color: #fff;">
+        <button onclick="handleCreateUser()" class="lang" data-zh="新增用戶" data-en="Add User">新增用戶</button>
     </div>
 </section>
+
+<div id="game-picker-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:999; flex-direction:column; align-items:center; justify-content:center;">
+    <h2 class="lang" data-zh="請選擇訓練項目" data-en="Select Training">請選擇訓練項目</h2>
+    <button onclick="pickGame(1)" style="width: 80%; max-width: 300px; padding: 20px; font-size: 1.5rem;">⚡ 捕鼠特攻</button>
+    <button onclick="pickGame(2)" style="width: 80%; max-width: 300px; padding: 20px; font-size: 1.5rem; background: #4CAF50; color: white;">🧠 老鼠迷蹤</button>
+    <button onclick="closePicker()" style="background:none; color:#999; text-decoration:underline; margin-top:20px;">取消</button>
+</div>
+
 
 <section id="view-lobby" class="view">
     <div class="rule-card">
@@ -143,19 +163,70 @@ function toggleLanguage() {
     document.querySelectorAll('.lang').forEach(el => { el.innerText = el.getAttribute(`data-${appState.lang}`); });
 }
 
+/* --- 🛠️ 用戶管理與遊戲彈窗邏輯 --- */
+
 function refreshUserList() {
     const container = document.getElementById('user-list-container');
-    container.innerHTML = appState.users.map((u, i) => `<div class="profile-item" onclick="selectUser(${i})">👤 ${u.name}</div>`).join('');
+    container.innerHTML = appState.users.map((u, i) => `
+        <div class="profile-item" style="display: flex; justify-content: space-between; align-items: center; width: 90%; max-width: 400px;">
+            <span style="flex-grow: 1; text-align: left; overflow: hidden; text-overflow: ellipsis;">👤 ${u.name}</span>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="editUser(${i})" style="padding: 5px 10px; font-size: 0.9rem; background: #555; color: #fff; margin: 0;">✏️</button>
+                <button onclick="deleteUser(${i})" style="padding: 5px 10px; font-size: 0.9rem; background: #b22222; color: #fff; margin: 0;">🗑️</button>
+                <button onclick="openPicker(${i})" style="padding: 5px 15px; font-size: 1.1rem; background: #FFCC00; color: #000; margin: 0; font-weight: bold;">▶️</button>
+            </div>
+        </div>
+    `).join('');
 }
+
 function handleCreateUser() {
-    const input = document.getElementById('name-input'); if (!input.value) return;
-    appState.users.push({ name: input.value });
-    localStorage.setItem('mouse_final_v14', JSON.stringify(appState.users));
-    input.value = ''; refreshUserList();
+    const input = document.getElementById('name-input');
+    if (!input.value.trim()) return;
+    appState.users.push({ name: input.value.trim() });
+    saveAndRefresh();
+    input.value = '';
 }
-function selectUser(i) {
-    document.getElementById('current-name-display').innerText = appState.users[i].name;
-    showView('lobby');
+
+function editUser(index) {
+    const newName = prompt(appState.lang === 'zh' ? "修改用戶名稱：" : "Edit User Name:", appState.users[index].name);
+    if (newName && newName.trim()) {
+        appState.users[index].name = newName.trim();
+        saveAndRefresh();
+    }
+}
+
+function deleteUser(index) {
+    const confirmMsg = appState.lang === 'zh' ? "確定要刪除此用戶嗎？" : "Delete this user?";
+    if (confirm(confirmMsg)) {
+        appState.users.splice(index, 1);
+        saveAndRefresh();
+    }
+}
+
+function saveAndRefresh() {
+    localStorage.setItem('mouse_final_v14', JSON.stringify(appState.users));
+    refreshUserList();
+}
+
+/* --- 彈窗選擇邏輯 --- */
+let selectedUserIndex = null;
+
+function openPicker(index) {
+    selectedUserIndex = index;
+    document.getElementById('current-name-display').innerText = appState.users[index].name;
+    document.getElementById('game-picker-modal').style.display = 'flex';
+}
+
+function closePicker() {
+    document.getElementById('game-picker-modal').style.display = 'none';
+}
+
+function pickGame(gameNum) {
+    closePicker();
+    if (gameNum === 1) initGame1();
+    if (gameNum === 2) initGame2();
+}
+
 }
 
 /* --- Game 1 --- */
