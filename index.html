@@ -373,12 +373,12 @@ async function startG2Level() {
         if (n.length === 0) break;
         curr = n[Math.floor(Math.random()*n.length)]; g2Data.path.push(`${curr.x}-${curr.y}`);
     }
-    document.getElementById('g2-hint').innerText = "👀 ...";
+    document.getElementById('g2-hint').innerText = "👀 ...記住老鼠逃走路線";
     for (let p of g2Data.path) {
         let t = grid.querySelector(`[data-pos="${p}"]`);
         if(t) { t.innerText = '🐀'; await new Promise(r => setTimeout(r, 800)); t.innerText = ''; }
     }
-    document.getElementById('g2-hint').innerText = "👉 GO!";
+    document.getElementById('g2-hint').innerText = "👉 GO!順序點擊逃走路線";
     g2Data.isShowing = false;
     document.querySelectorAll('#g2-grid .cell').forEach(c => {
         c.onclick = () => {
