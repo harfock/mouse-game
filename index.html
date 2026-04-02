@@ -102,12 +102,12 @@
     <div style="width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 10px;">
         <div class="rule-card" style="margin: 0; border-left-color: #FFCC00;">
             <strong class="lang" data-zh="⚡ 遊戲一：捕鼠特攻" data-en="⚡ Game 1: Rat Catcher">⚡ 遊戲一：捕鼠特攻</strong><br>
-            <span class="lang" data-zh="當 🐀 出現時立即點擊！避開其他小動物。速度會越來越快。" data-en="Tap 🐀 instantly! Avoid other animals. It gets faster!">當 🐀 出現時立即點擊！避開其他小動物。速度會越來越快。</span>
+            <span class="lang" data-zh="當 🐀 出現時立即點擊！避開其他小動物。速度會越來越快。" data-en="Tap 🐀 instantly! Avoid other animals. It gets faster!">當 🐀 出現時立即點擊！避開其他小動物。限時內捉到🐀越多越高分。</span>
         </div>
         
         <div class="rule-card" style="margin: 0; border-left-color: #4CAF50;">
             <strong class="lang" data-zh="🧠 遊戲二：老鼠迷蹤" data-en="🧠 Game 2: Mouse Maze">🧠 遊戲二：老鼠迷蹤</strong><br>
-            <span class="lang" data-zh="記住 🐀 走過的路徑，等牠消失後，依序點擊格子還原路線。" data-en="Watch the path of 🐀. Tap the cells in order after it vanishes.">記住 🐀 走過的路徑，等牠消失後，依序點擊格子還原路線。</span>
+            <span class="lang" data-zh="記住 🐀 走過的路徑，等牠消失後，依序點擊格子還原路線。" data-en="Watch the path of 🐀. Tap the cells in order after it vanishes.">記住 🐀 走過的路徑，等牠消失後，依序點擊格子還原逃走路線。</span>
         </div>
     </div>
 
@@ -131,7 +131,7 @@
 <section id="view-game1" class="view">
     <div style="width: 95%; background: #1A1A1A; border: 2px solid var(--accent); padding: 12px; border-radius: 12px; margin-bottom: 10px;">
         <div class="lang" data-zh="⚡ 看到 🐀 加 10 分，點錯扣 5 分！" data-en="⚡ 🐀 +10 pts, Others -5 pts!" style="font-size: 1.5rem; font-weight: bold; color: var(--accent); line-height: 1.2;">
-            ⚡ 看到 🐀 加 10 分，點錯扣 5 分！
+            ⚡ 捉到 🐀 加 10 分，捉到其他動物扣 5 分！
         </div>
         <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 1.2rem; font-weight: bold;">
             <span style="color: #FF4444;">⏱️ <span id="g1-timer">45</span>s</span>
@@ -311,7 +311,7 @@ function runG1Cycle() {
     
     // 放置干擾物：隨著難度（gridSize）提升，放置更多干擾物
     // 等級越高，比例越高
-    let decoyCount = Math.floor((g1Data.gridSize ** 2) * 0.4); 
+    let decoyCount = Math.floor((g1Data.gridSize ** 2) * 0.8); 
     for(let d=0; d < decoyCount; d++){
         let idx = Math.floor(Math.random() * cells.length);
         if(cells[idx].innerText === '') {
