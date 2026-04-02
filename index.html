@@ -349,59 +349,123 @@ function endGame1() {
 
 
 
-/* --- Game 2 --- */
-let g2Data = { level: 1, size: 5, path: [], playerIdx: 0, isShowing: false };
-function initGame2() { g2Data.level = 1; g2Data.size = 5; showView('game2'); startG2Level(); }
+/* --- 🛠️ 遊戲 2：老鼠迷蹤 (修復重疊 Bug 版) --- */
+let g2Data = { 
+    level: 1, size: 5, path: [], playerIdx: 0, 
+    isShowing: false,
+    currentLevelId: 0 // 新增：用來標記當前關卡序號，防止舊循環干擾
+};
+
+function initGame2() {
+    g2Data.level = 1;
+    g2Data.size = 5;
+    g2Data.currentLevelId = 0; // 重置計數
+    showView('game2');
+    startG2Level();
+}
+
 async function startG2Level() {
-    g2Data.playerIdx = 0; g2Data.isShowing = true;
+    // 每次開始新關卡，序號 +1
+    const myLevelId = ++g2Data.currentLevelId;
+    
+    g2Data.playerIdx = 0;
+    g2Data.isShowing = true;
+    
     const isElderly = document.getElementById('g2-elderly-chk').checked;
     const grid = document.getElementById('g2-grid');
     document.documentElement.style.setProperty('--grid-size', g2Data.size);
     grid.innerHTML = '';
+    
     document.getElementById('g2-lives-display').innerText = isElderly ? "♾️" : "❤️❤️❤️";
     document.getElementById('bar-fill-g2').style.width = ((g2Data.level % 5) * 20) + "%";
+
+    // 建立網格
     for (let i=0; i<g2Data.size**2; i++) {
         const cell = document.createElement('div');
-        cell.className = 'cell'; cell.dataset.pos = `${Math.floor(i/g2Data.size)}-${i%g2Data.size}`;
+        cell.className = 'cell';
+        cell.dataset.pos = `${Math.floor(i/g2Data.size)}-${i%g2Data.size}`;
         grid.appendChild(cell);
     }
+
+    // 生成隨機路徑 (不重複)
     g2Data.path = ["0-0"];
     let curr = {x:0, y:0};
-    for (let s=0; s<(g2Data.level+3); s++) {
-        let n = [{x:curr.x+1, y:curr.y}, {x:curr.x-1, y:curr.y}, {x:curr.x, y:curr.y+1}, {x:curr.x, y:curr.y-1}]
-                .filter(p => p.x>=0 && p.x<g2Data.size && p.y>=0 && p.y<g2Data.size && !g2Data.path.includes(`${p.x}-${p.y}`));
-        if (n.length === 0) break;
-        curr = n[Math.floor(Math.random()*n.length)]; g2Data.path.push(`${curr.x}-${curr.y}`);
+    const pathLength = g2Data.level + 3;
+    
+    for (let s=0; s < pathLength; s++) {
+        let neighbors = [
+            {x:curr.x+1, y:curr.y}, {x:curr.x-1, y:curr.y}, 
+            {x:curr.x, y:curr.y+1}, {x:curr.x, y:curr.y-1}
+        ].filter(p => 
+            p.x>=0 && p.x<g2Data.size && p.y>=0 && p.y<g2Data.size && 
+            !g2Data.path.includes(`${p.x}-${p.y}`)
+        );
+        if (neighbors.length === 0) break;
+        curr = neighbors[Math.floor(Math.random()*neighbors.length)];
+        g2Data.path.push(`${curr.x}-${curr.y}`);
     }
-    document.getElementById('g2-hint').innerText = "👀 ...記住老鼠逃走路線";
+
+    // 顯示路徑
+    document.getElementById('g2-hint').innerText = "👀 ...";
     for (let p of g2Data.path) {
+        // 重要：如果當前的 LevelId 已經不是最新的，說明遊戲已重開，立即終止此函數
+        if (myLevelId !== g2Data.currentLevelId || !appState.viewActive === 'game2') return;
+
         let t = grid.querySelector(`[data-pos="${p}"]`);
-        if(t) { t.innerText = '🐀'; await new Promise(r => setTimeout(r, 800)); t.innerText = ''; }
+        if(t) {
+            t.innerText = '🐀';
+            await new Promise(r => setTimeout(r, 800));
+            t.innerText = '';
+            // 消失後也要小等一下，才有節奏感
+            await new Promise(r => setTimeout(r, 100));
+        }
     }
-    document.getElementById('g2-hint').innerText = "👉 GO!順序點擊逃走路線";
+
+    // 檢查點：確保播完後依然是同一個關卡
+    if (myLevelId !== g2Data.currentLevelId) return;
+
+    document.getElementById('g2-hint').innerText = "👉 GO!";
     g2Data.isShowing = false;
+
+    // 綁定點擊事件
     document.querySelectorAll('#g2-grid .cell').forEach(c => {
-        c.onclick = () => {
+        c.onclick = (e) => {
+            e.preventDefault();
             if (g2Data.isShowing) return;
-            if (c.dataset.pos === g2Data.path[g2Data.playerIdx]) {
-                c.innerText = '🐀'; c.classList.add('correct'); g2Data.playerIdx++;
+            
+            const pos = c.dataset.pos;
+            if (pos === g2Data.path[g2Data.playerIdx]) {
+                c.innerText = '🐀';
+                c.classList.add('correct');
+                g2Data.playerIdx++;
+                
                 if (g2Data.playerIdx === g2Data.path.length) {
-                    g2Data.level++; if (g2Data.level % 3 === 0 && g2Data.size < 9) g2Data.size++;
-                    setTimeout(startG2Level, 600);
+                    g2Data.level++;
+                    if (g2Data.level % 3 === 0 && g2Data.size < 8) g2Data.size++;
+                    setTimeout(() => {
+                        if (myLevelId === g2Data.currentLevelId) startG2Level();
+                    }, 600);
                 }
             } else {
-                c.classList.add('wrong'); setTimeout(() => { c.classList.remove('wrong'); startG2Level(); }, 300);
+                c.classList.add('wrong');
+                // 點錯直接重播當前關卡
+                setTimeout(() => {
+                    if (myLevelId === g2Data.currentLevelId) startG2Level();
+                }, 400);
             }
         };
     });
 }
 
-function quitGame() { 
-    appState.g1Active = false; 
-    clearTimeout(g1Data.timer); 
-    // 確保返回主頁
-    showView('profile'); 
+// 修改 quitGame 確保完全切斷 Game 2 的非同步鏈
+function quitGame() {
+    appState.g1Active = false;
+    g2Data.currentLevelId++; // 強制讓任何背景中的 startG2Level 失效
+    clearTimeout(g1Data.timer);
+    clearInterval(g1Data.gameClock);
+    showView('profile');
 }
+
 
 window.onload = () => { refreshUserList(); };
 </script>
