@@ -89,26 +89,37 @@
 </head>
 <body>
 
-<header>
-    <div>👤 <span id="current-name-display">---</span></div>
-    <button onclick="toggleLanguage()" class="btn-sm">ZH / EN</button>
-</header>
+
 
 <section id="view-profile" class="view active">
-    <h2 class="lang" data-zh="鼠鼠訓練營" data-en="Mouse Academy">鼠鼠訓練營</h2>
-    
-    <div class="rule-card">
-        <strong class="lang" data-zh="📖 如何開始：" data-en="📖 Instructions:">📖 如何開始：</strong><br>
-        <span class="lang" data-zh="1. 新增名字 2. 點擊 ▶️ 開始 3. 選擇遊戲項目" data-en="1. Add Name 2. Tap ▶️ to Start 3. Pick a Game">1. 新增名字 2. 點擊 ▶️ 開始 3. 選擇遊戲項目</span>
+    <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #222; border-radius: 10px; margin-bottom: 15px; flex-shrink: 0;">
+        <div style="font-size: 0.9rem;">👤 <span id="current-name-display">---</span></div>
+        <button onclick="toggleLanguage()" class="btn-sm" style="margin:0;">ZH / EN</button>
     </div>
 
-    <div id="user-list-container" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
+    <h2 class="lang" data-zh="鼠鼠訓練營" data-en="Mouse Academy">鼠鼠訓練營</h2>
+    
+    <div style="width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 10px;">
+        <div class="rule-card" style="margin: 0; border-left-color: #FFCC00;">
+            <strong class="lang" data-zh="⚡ 遊戲一：捕鼠特攻" data-en="⚡ Game 1: Rat Catcher">⚡ 遊戲一：捕鼠特攻</strong><br>
+            <span class="lang" data-zh="當 🐀 出現時立即點擊！避開其他小動物。速度會越來越快。" data-en="Tap 🐀 instantly! Avoid other animals. It gets faster!">當 🐀 出現時立即點擊！避開其他小動物。速度會越來越快。</span>
+        </div>
+        
+        <div class="rule-card" style="margin: 0; border-left-color: #4CAF50;">
+            <strong class="lang" data-zh="🧠 遊戲二：老鼠迷蹤" data-en="🧠 Game 2: Mouse Maze">🧠 遊戲二：老鼠迷蹤</strong><br>
+            <span class="lang" data-zh="記住 🐀 走過的路徑，等牠消失後，依序點擊格子還原路線。" data-en="Watch the path of 🐀. Tap the cells in order after it vanishes.">記住 🐀 走過的路徑，等牠消失後，依序點擊格子還原路線。</span>
+        </div>
+    </div>
 
-    <div style="margin-top: 20px; background: #111; padding: 15px; border-radius: 15px; border: 1px dashed #555;">
-        <input type="text" id="name-input" placeholder="Name..." style="padding: 10px; font-size: 1rem; width: 130px; border-radius: 8px; border: none; background: #222; color: #fff;">
+    <div id="user-list-container" style="width: 100%; margin-top: 15px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; max-height: 30vh;">
+        </div>
+
+    <div style="margin-top: 15px; background: #111; padding: 12px; border-radius: 15px; border: 1px dashed #555; flex-shrink: 0;">
+        <input type="text" id="name-input" placeholder="Name..." style="padding: 10px; font-size: 1rem; width: 120px; border-radius: 8px; border: none; background: #222; color: #fff;">
         <button onclick="handleCreateUser()" class="lang" data-zh="新增" data-en="Add">新增</button>
     </div>
 </section>
+
 
 <div id="game-picker-modal">
     <h3 class="lang" data-zh="請選擇訓練項目" data-en="Select Training">請選擇訓練項目</h3>
@@ -275,7 +286,13 @@ async function startG2Level() {
     });
 }
 
-function quitGame() { appState.g1Active = false; clearTimeout(g1Data.timer); showView('profile'); }
+function quitGame() { 
+    appState.g1Active = false; 
+    clearTimeout(g1Data.timer); 
+    // 確保返回主頁
+    showView('profile'); 
+}
+
 window.onload = () => { refreshUserList(); };
 </script>
 </body>
