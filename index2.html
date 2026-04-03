@@ -260,50 +260,54 @@ let g1Data = {
 };
 
 /* --- 🛠️ 遊戲 1：加入倒數與提示功能 (替換原 initGame1) --- */
+/* --- 🛠️ 修正後的 Game 1 啟動邏輯 --- */
 async function initGame1() {
-    [span_3](start_span)// 1. 初始化數據與狀態[span_3](end_span)
+    [span_0](start_span)[span_1](start_span)// A. 數據與 UI 重置[span_0](end_span)[span_1](end_span)
     g1Data.score = 0;
     g1Data.gridSize = 5;
     g1Data.historyMice = "";
     g1Data.historyOthers = "";
     
-    // 2. 根據模式設定時間 (180s 或 45s)
-    updateG1TimerMode();
-    
-    [span_4](start_span)// 3. UI 畫面重置[span_4](end_span)
     const currentName = document.getElementById('current-name-display').innerText;
     const currentUser = appState.users.find(u => u.name === currentName);
     document.getElementById('g1-best').innerText = currentUser?.g1Best || 0;
+    
     document.getElementById('g1-score').innerText = "0";
     document.getElementById('g1-collection-mice').innerText = "";
     document.getElementById('g1-collection-others').innerText = "";
+
+    // B. 設定時間模式（處理 180s 或 45s）
+    if (typeof updateG1TimerMode === "function") {
+        updateG1TimerMode();
+    } else {
+        const isElderly = document.getElementById('g1-elderly-chk')?.checked;
+        g1Data.timeLeft = isElderly ? 180 : 45;
+    }
+    document.getElementById('g1-timer').innerText = g1Data.timeLeft;
     
-    [span_5](start_span)// 4. 切換到遊戲視圖[span_5](end_span)
+    [span_2](start_span)// C. 切換視圖[span_2](end_span)
     showView('game1');
     
-    // 5. 執行倒數邏輯
+    // D. 執行 3, 2, 1 倒數
     const grid = document.getElementById('g1-grid');
-    grid.innerHTML = ''; [span_6](start_span)// 先清空網格[span_6](end_span)
+    grid.innerHTML = ''; 
     
-    const isElderly = document.getElementById('g1-elderly-chk')?.checked;
-    const startMsg = isElderly ? "180秒內捉老鼠" : "45秒內捉老鼠";
+    const isElderlyMode = document.getElementById('g1-elderly-chk')?.checked;
+    const startMsg = isElderlyMode ? "180秒內捉老鼠" : "45秒內捉老鼠";
 
-    // A. 顯示文字提示
-    grid.innerHTML = `<div style="grid-column: 1/-1; grid-row: 1/-1; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--accent); font-weight: bold; text-align: center; padding: 20px;">${startMsg}</div>`;
-    await new Promise(r => setTimeout(r, 1500)); // 停留 1.5 秒
+    grid.innerHTML = `<div style="grid-column: 1/-1; grid-row: 1/-1; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--accent); font-weight: bold; text-align: center;">${startMsg}</div>`;
+    await new Promise(r => setTimeout(r, 1200));
 
-    // B. 顯示 3, 2, 1 倒數
     const countdowns = ['3', '2', '1', 'GO!'];
     for (let s of countdowns) {
-        grid.innerHTML = `<div style="grid-column: 1/-1; grid-row: 1/-1; display: flex; align-items: center; justify-content: center; font-size: 6rem; color: var(--accent); font-weight: bold;">${s}</div>`;
-        await new Promise(r => setTimeout(r, 800)); // 每個數字停留 0.8 秒
+        grid.innerHTML = `<div style="grid-column: 1/-1; grid-row: 1/-1; display: flex; align-items: center; justify-content: center; font-size: 5rem; color: var(--accent); font-weight: bold;">${s}</div>`;
+        await new Promise(r => setTimeout(r, 800));
     }
 
-    [span_7](start_span)// 6. 正式啟動遊戲時鐘與老鼠循環[span_7](end_span)
+    [span_3](start_span)// E. 正式開始[span_3](end_span)
     startG1Clock();
     runG1Cycle();
-}
-
+} // <--- 確保這裡有關閉大括號
 
 function startG1Clock() {
     clearInterval(g1Data.gameClock);
