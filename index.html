@@ -5,102 +5,224 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>鼠鼠訓練營 - 完整專業版</title>
     <style>
-        :root {
-            --bg: #000;
-            --text: #FFFF00;
-            --accent: #FFCC00;
-            /* 核心：鎖定 80vmin，確保在任何手機螢幕都不會超出、不需捲動 */
-            --grid-px: 80vmin; 
+       :root {
+            /* Pro-Gamer Color Palette */
+            --bg: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%);
+            --card-bg: rgba(255, 255, 255, 0.08);
+            --text: #ffffff;
+            --accent: #00ff88; /* Neon Green */
+            --warning: #ffcc00; /* Neon Yellow */
+            --danger: #ff4444; /* Neon Red */
+            --grid-px: 75vmin; 
             --grid-size: 5;
+            --gold: #ffd700;
         }
 
-        * { touch-action: manipulation; box-sizing: border-box; }
+        * { 
+            touch-action: manipulation; 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+        }
 
         body {
-            background-color: var(--bg); color: var(--text);
-            font-family: 'PingFang HK', sans-serif;
-            margin: 0; padding: 0; overflow: hidden; /* 徹底禁用捲軸 */
-            display: flex; flex-direction: column; align-items: center; height: 100vh;
+            background: var(--bg); 
+            color: var(--text);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0; 
+            /* Strict 2% Blank Space at Top and Bottom */
+            padding: 2vh 0; 
+            box-sizing: border-box; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            height: 100vh;
         }
+        /* Leaderboard Styling */
+.leaderboard-modal {
+    background: rgba(15, 15, 26, 0.95);
+    border: 2px solid var(--accent);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
+}
 
-        header { 
-            width: 100%; height: 60px; padding: 0 15px; background: #222; border-bottom: 2px solid var(--accent);
-            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+.rank-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    margin: 4px 0;
+    background: var(--card-bg);
+    border-radius: 8px;
+}
+
+.rank-1 { border-left: 4px solid var(--gold); color: var(--gold); }
+
+        /* --- View Control --- */
+        .view { 
+            display: none; 
+            width: 100%; 
+            flex-grow: 1; 
+            padding: 10px; 
+            text-align: center; 
+            flex-direction: column; 
+            align-items: center; 
+            /* Use flex-start to ensure top content (legend/title) is never cut off */
+            justify-content: flex-start; 
+            overflow-y: auto;
+            overflow-x: hidden;
         }
-
-        /* 視圖控制：強制內容居中且不溢出 */
-        .view { display: none; width: 100%; flex-grow: 1; padding: 10px; text-align: center; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
         .view.active { display: flex; }
 
-        /* --- 規則與卡片 --- */
-        .rule-card { background: #111; border-left: 5px solid var(--accent); padding: 12px; margin: 10px; text-align: left; font-size: 0.95rem; width: 90%; max-width: 400px; color: #EEE; }
-        .hint-text { font-size: 0.9rem; color: #BBB; margin-bottom: 8px; font-weight: bold; }
-
-        /* --- 用戶列表樣式 --- */
-        .profile-item { 
-            background: #111; border: 1px solid var(--accent); padding: 12px; margin: 6px; 
-            width: 90%; max-width: 400px; border-radius: 12px; 
-            display: flex; justify-content: space-between; align-items: center; 
+        /* --- Modern UI Components --- */
+        .ui-card {
+            width: 95%;
+            max-width: 450px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 15px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            margin-bottom: 12px;
+            flex-shrink: 0; /* Prevents card from shrinking on small screens */
         }
 
-        /* --- 網格系統：完美正方形 + Emoji 縮放 --- */
+        .rule-card { 
+            background: rgba(0, 0, 0, 0.3); 
+            border-left: 4px solid var(--accent); 
+            padding: 12px; 
+            margin: 8px 0; 
+            text-align: left; 
+            font-size: 0.9rem; 
+            border-radius: 4px;
+        }
+
+        /* --- Legend Badges --- */
+        .badge-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* --- Grid System --- */
         .game-grid {
             display: grid;
             grid-template-columns: repeat(var(--grid-size), 1fr);
             grid-template-rows: repeat(var(--grid-size), 1fr);
-            gap: 5px;
+            gap: 6px;
             width: var(--grid-px);
             height: var(--grid-px);
-            background: #222; padding: 8px; border-radius: 10px;
+            background: rgba(0, 0, 0, 0.4); 
+            padding: 10px; 
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
         }
 
         .cell {
-            background: #333; border-radius: 6px;
-            display: flex; justify-content: center; align-items: center;
-            /* Emoji 大小鎖定為格子的 60%，絕不撐破網格 */
+            background: rgba(255, 255, 255, 0.08); 
+            border-radius: 8px;
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
             font-size: calc(var(--grid-px) / var(--grid-size) * 0.6);
             aspect-ratio: 1 / 1;
             user-select: none;
+            transition: all 0.2s ease;
         }
 
-        /* --- 進度條 --- */
-        .progress-wrapper { width: 80%; max-width: 400px; background: #333; height: 18px; border-radius: 10px; margin: 10px 0; overflow: hidden; border: 1px solid var(--accent); }
-        .bar-fill { height: 100%; background: var(--accent); width: 0%; transition: 0.3s; }
-
-        /* --- 彈窗 (Modal) --- */
-        #game-picker-modal { 
-            display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
-            background:rgba(0,0,0,0.95); z-index:999; flex-direction:column; 
-            align-items:center; justify-content:center; 
+        /* --- Visual Feedback & Outlines --- */
+        .path-correct { 
+            border: 3px solid var(--accent) !important; 
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+            background: rgba(0, 255, 136, 0.1) !important;
+        }
+        .path-mismatch { 
+            border: 3px solid var(--warning) !important; 
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
+            background: rgba(255, 204, 0, 0.1) !important;
+        }
+        .path-wrong { 
+            border: 3px solid var(--danger) !important; 
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.4);
+            background: rgba(255, 68, 68, 0.1) !important;
         }
 
-        /* 按鈕視覺 */
-        button { background: var(--accent); color: #000; border: none; padding: 12px 20px; font-size: 1rem; font-weight: bold; border-radius: 10px; margin: 5px; cursor: pointer; }
-        button:active { filter: brightness(0.8); }
-        .btn-sm { padding: 6px 12px; font-size: 0.85rem; margin: 0 2px; }
-        .btn-delete { background: #b22222; color: #fff; }
-        .btn-edit { background: #555; color: #fff; }
+        .hit-effect { background: #FFF !important; transform: scale(1.1); }
+        .grid-zoom-focus { transition: transform 0.6s ease-in-out; transform: scale(2.2); z-index: 10; }
 
-        /* 特效 */
-        .hit-effect { background: #FFF !important; transform: scale(1.05); }
-        .correct { background: #4CAF50 !important; }
-        .wrong { background: #F44336 !important; }
-        
+        /* --- Buttons --- */
+        button { 
+            background: var(--accent); 
+            color: #001a11; 
+            border: none; 
+            padding: 12px 24px; 
+            font-size: 1rem; 
+            font-weight: 800; 
+            border-radius: 12px; 
+            cursor: pointer;
+            box-shadow: 0 4px 0 #009e54;
+            transition: transform 0.1s;
+        }
+        button:active { transform: translateY(2px); box-shadow: 0 2px 0 #009e54; }
+        .btn-sm { padding: 6px 14px; font-size: 0.8rem; box-shadow: none; }
+        .btn-delete { background: var(--danger); color: white; box-shadow: 0 4px 0 #990000; }
+
+        /* --- Animations --- */
         @keyframes pulse {
-    0% { transform: scale(0.5); opacity: 0; }
-    50% { transform: scale(1.2); opacity: 1; }
-    100% { transform: scale(1); opacity: 1; }
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .cage-effect { font-size: 1.5rem; animation: pulse 0.4s infinite; }
+
+/* --- Game 2 Outline Styles (Fixed Visibility) --- */
+        .path-correct { border: 4px solid #4CAF50 !important; background: rgba(76, 175, 80, 0.1) !important; }   /* Green */
+        .path-mismatch { border: 4px solid #FFCC00 !important; background: rgba(255, 204, 0, 0.1) !important; } /* Yellow */
+        .path-wrong { border: 4px solid #F44336 !important; background: rgba(244, 67, 54, 0.1) !important; }    /* Red */
+
+        /* Remove solid backgrounds that cover outlines */
+        .correct { /* Keep empty or add scaling effect */ transform: scale(1.02); }
+        .wrong { /* Keep empty to allow outlines to show */ }
+
+.rank-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--card-bg);
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.05);
 }
+.top-1 { border-left: 5px solid #FFD700; background: rgba(255, 215, 0, 0.1); }
+.top-2 { border-left: 5px solid #C0C0C0; background: rgba(192, 192, 192, 0.1); }
+.top-3 { border-left: 5px solid #CD7F32; background: rgba(205, 127, 50, 0.1); }
+.rank-number { font-weight: 800; width: 30px; }
 
     </style>
 </head>
 <body>
 
-
+<span id="current-name-display" style="display:none;"></span>
 
 <section id="view-profile" class="view active">
-    <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #222; border-radius: 10px; margin-bottom: 15px; flex-shrink: 0;">
-        <div style="font-size: 0.9rem;">👤 <span id="current-name-display">---</span></div>
+    <div style="width: 100%; display: flex; justify-content: flex-end; padding: 10px 20px; flex-shrink: 0;">
         <button onclick="toggleLanguage()" class="btn-sm" style="margin:0;">ZH / EN</button>
     </div>
 
@@ -109,31 +231,70 @@
     <div style="width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 10px;">
         <div class="rule-card" style="margin: 0; border-left-color: #FFCC00;">
             <strong class="lang" data-zh="⚡ 遊戲一：捕鼠特攻" data-en="⚡ Game 1: Rat Catcher">⚡ 遊戲一：捕鼠特攻</strong><br>
-            <span class="lang" data-zh="當 🐀 出現時立即點擊！避開其他小動物。速度會越來越快。" data-en="Tap 🐀 instantly! Avoid other animals. It gets faster!">當 🐀 出現時立即點擊！避開其他小動物。限時內捉到🐀越多越高分。</span>
+            <span class="lang" data-zh="當 🐀 出現時立即點擊！避開其他小動物。限時內捉到🐀越多越高分。" data-en="Tap 🐀 instantly! Avoid other animals. It gets faster!">當 🐀 出現時立即點擊！避開其他小動物。限時內捉到🐀越多越高分。</span>
         </div>
         
         <div class="rule-card" style="margin: 0; border-left-color: #4CAF50;">
             <strong class="lang" data-zh="🧠 遊戲二：老鼠迷蹤" data-en="🧠 Game 2: Mouse Maze">🧠 遊戲二：老鼠迷蹤</strong><br>
-            <span class="lang" data-zh="記住 🐀 走過的路徑，等牠消失後，依序點擊格子還原路線。" data-en="Watch the path of 🐀. Tap the cells in order after it vanishes.">記住 🐀 走過的路徑，等牠消失後，依序點擊格子還原逃走路線。</span>
+            <span class="lang" data-zh="記住 🐀 走過的路徑，等牠消失後，依序點擊格子還原逃走路線。" data-en="Watch the path of 🐀. Tap the cells in order after it vanishes.">記住 🐀 走過的路徑，等牠消失後，依序點擊格子還原逃走路線。</span>
         </div>
     </div>
+    <button onclick="openHallOfFame()" style="background:none; border:1px solid var(--accent); color:var(--accent); padding: 8px 20px; font-size: 0.9rem; margin-top: 10px;">
+    🏆 <span class="lang" data-zh="查看榮譽榜" data-en="View Rankings">查看榮譽榜</span>
+    </button>
 
-    <div id="user-list-container" style="width: 100%; margin-top: 15px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; max-height: 30vh;">
+    <button id="main-start-btn" onclick="showUserSelection()" style="width: 80%; max-width: 300px; margin-top: 25px; padding: 20px; font-size: 1.5rem; box-shadow: 0 0 15px var(--accent);">
+        🚀 <span class="lang" data-zh="開始訓練" data-en="Start Training">開始訓練</span>
+    </button>
+
+    <div id="user-selection-area" style="display: none; width: 100%; flex-direction: column; align-items: center; animation: pulse 0.3s;">
+        <div style="margin-top: 20px; color: var(--accent); font-weight: bold;">
+            <span class="lang" data-zh="請選擇或新增學員" data-en="Select or Add Player">請選擇或新增學員</span>
         </div>
+        
+        <div id="user-list-container" style="width: 100%; margin-top: 10px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; max-height: 25vh;">
+            </div>
 
-    <div style="margin-top: 15px; background: #111; padding: 12px; border-radius: 15px; border: 1px dashed #555; flex-shrink: 0;">
-        <input type="text" id="name-input" placeholder="Name..." style="padding: 10px; font-size: 1rem; width: 120px; border-radius: 8px; border: none; background: #222; color: #fff;">
-        <button onclick="handleCreateUser()" class="lang" data-zh="新增" data-en="Add">新增</button>
+        <div style="margin-top: 10px; background: #111; padding: 12px; border-radius: 15px; border: 1px dashed #555; flex-shrink: 0;">
+            <input type="text" id="name-input" placeholder="Name..." style="padding: 10px; font-size: 1rem; width: 120px; border-radius: 8px; border: none; background: #222; color: #fff;">
+            <button onclick="handleCreateUser()" class="lang" data-zh="新增" data-en="Add">新增</button>
+        </div>
     </div>
 </section>
 
 
-<div id="game-picker-modal">
+<div id="game-picker-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:2000; flex-direction:column; align-items:center; justify-content:center; gap:15px;">
     <h3 class="lang" data-zh="請選擇訓練項目" data-en="Select Training">請選擇訓練項目</h3>
     <button onclick="pickGame(1)" style="width: 80%; max-width: 280px; padding: 25px; font-size: 1.4rem; margin-bottom: 15px;">⚡ 捕鼠特攻</button>
     <button onclick="pickGame(2)" style="width: 80%; max-width: 280px; padding: 25px; font-size: 1.4rem; background: #4CAF50; color: #fff;">🧠 老鼠迷蹤</button>
     <button onclick="closePicker()" style="background:none; color:#999; text-decoration:underline; margin-top:20px;">取消 / Cancel</button>
 </div>
+
+<div id="g2-retry-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+    <div style="background:#222; padding:30px; border-radius:20px; border:2px solid #4CAF50; width:85%; max-width:320px;">
+        <h3 id="g2-retry-msg" class="lang" data-zh="出錯了！" data-en="Wrong move!">出錯了！</h3>
+        <p class="lang" data-zh="扣減一個心心繼續遊戲？" data-en="Use 1 heart to retry?">扣減一個心心繼續遊戲？</p>
+        <div style="font-size: 2rem; margin: 15px 0;" id="g2-modal-lives">❤️❤️❤️</div>
+        <button onclick="handleG2Retry(true)" style="width:100%; background:#4CAF50; color:white; margin-bottom:10px;">是 / Yes</button>
+        <button onclick="handleG2Retry(false)" style="width:100%; background:#555; color:white;">否 / No</button>
+    </div>
+</div>
+
+<section id="view-leaderboard" class="view">
+    <div style="width: 100%; display: flex; justify-content: space-between; padding: 10px 20px;">
+        <button onclick="showView('profile')" class="btn-sm" style="background:#444; color:#fff;">⬅️ <span class="lang" data-zh="返回" data-en="Back">返回</span></button>
+        <h2 class="lang" data-zh="🏆 榮譽榜" data-en="🏆 Hall of Fame" style="margin:0; color:var(--accent);">🏆 榮譽榜</h2>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button id="rank-tab-g1" onclick="renderLeaderboard(1)" class="btn-sm" style="flex:1;">⚡ Catch</button>
+        <button id="rank-tab-g2" onclick="renderLeaderboard(2)" class="btn-sm" style="flex:1; background:#444;">🧠 Maze</button>
+    </div>
+
+    <div id="leaderboard-list" style="width: 95%; max-width: 400px; display: flex; flex-direction: column; gap: 8px;">
+        </div>
+</section>
+
 
 <section id="view-game1" class="view">
     <div style="width: 95%; background: #1A1A1A; border: 2px solid var(--accent); padding: 12px; border-radius: 12px; margin-bottom: 10px;">
@@ -170,27 +331,57 @@
 
 
 <section id="view-game2" class="view">
-    <div style="width: 95%; background: #1A1A1A; border: 2px solid #4CAF50; padding: 10px; border-radius: 12px; margin-bottom: 10px;">
-        <div id="g2-hint" style="font-size: 1.3rem; font-weight: bold; color: #4CAF50;">🧀 觀察芝士的位置...</div>
+    <div class="ui-card">
+        <h2 style="color: var(--accent); margin: 0 0 8px 0; font-size: 1.3rem; text-shadow: 0 0 10px rgba(0,255,136,0.4);" 
+            class="lang" data-zh="👉 送老鼠去吃芝士 🧀" data-en="👉 Help Mouse Get Cheese 🧀">
+            👉 送老鼠去吃芝士 🧀
+        </h2>
         
-        <div style="margin: 5px 0; color: #FFCC00; font-size: 1.1rem;">
-            已協助老鼠奔走 <span id="g2-total-steps" style="font-size: 1.5rem; color: #FFF; font-weight: bold;">0</span> 步
+        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 10px;">
+            <div class="badge" style="border: 1px solid #00ff88;">
+                <div style="width:10px; height:10px; background:#00ff88; border-radius:2px;"></div>
+                <span class="lang" data-zh="正確" data-en="Correct">正確</span>
+            </div>
+            <div class="badge" style="border: 1px solid #ffcc00;">
+                <div style="width:10px; height:10px; background:#ffcc00; border-radius:2px;"></div>
+                <span class="lang" data-zh="順序錯" data-en="Order">順序錯</span>
+            </div>
+            <div class="badge" style="border: 1px solid #ff4444;">
+                <div style="width:10px; height:10px; background:#ff4444; border-radius:2px;"></div>
+                <span class="lang" data-zh="錯誤" data-en="Wrong">錯誤</span>
+            </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
-            <span>速度: <input type="range" id="g2-speed-range" min="200" max="1100" value="600" style="width: 80px;"></span>
-            <span id="g2-lives-display">❤️❤️❤️</span>
+        <div id="g2-hint" style="color: #00d1ff; font-weight: bold; font-size: 0.95rem; margin-bottom: 8px;">🧀 Loading...</div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px;">
+    <div style="font-size: 0.9rem; color: #fff; display: flex; gap: 15px;">
+        <div>
+            <span class="lang" data-zh="關卡:" data-en="Level:">關卡:</span> 
+            <span id="g2-level-display" style="color: var(--accent); font-weight: bold;">1</span>
         </div>
+        <div>
+            <span class="lang" data-zh="步數:" data-en="Steps:">步數:</span> 
+            <span id="g2-total-steps" style="color: var(--accent); font-weight: bold;">0</span>
+        </div>
+    </div>
+    <div id="g2-lives-display" style="font-size: 1.1rem; letter-spacing: 2px;">❤️❤️❤️❤️❤️</div>
+</div>
     </div>
 
     <div id="g2-grid" class="game-grid"></div>
-    <button onclick="quitGame()" style="margin-top: 10px; background: #333; color: #ccc;">返回大廳</button>
-</section>
 
+    <div style="margin-top: 12px; display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.4); padding: 8px 15px; border-radius: 20px;">
+        <span style="font-size: 0.8rem; color: #aaa;" class="lang" data-zh="速度" data-en="Speed">速度</span>
+        <input type="range" id="g2-speed-range" min="200" max="1100" value="600" style="width: 100px; accent-color: var(--accent);">
+        <button onclick="quitGame()" style="background: none; border: 1px solid #444; color: #888; border-radius: 6px; padding: 2px 10px; font-size: 0.8rem;">Exit</button>
+    </div>
+</section>
 
 <script>
 /* --- 核心邏輯與用戶管理 --- */
-let appState = { lang: 'zh', users: JSON.parse(localStorage.getItem('mouse_final_v16') || '[]'), g1Active: false };
+let appState = { lang: 'zh', users: JSON.parse(localStorage.getItem('mouse_final_v16') || '[]'), g1Active: false, currentUserId: null };// Add this to track who is playing
+
 const decoys = ['🐹', '🐰', '🐥', '🐱', '🐶'];
 
 function toggleLanguage() {
@@ -202,26 +393,45 @@ function showView(id) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById(`view-${id}`).classList.add('active');
     appState.g1Active = (id === 'game1');
+    
+    // Reset selection area when returning to profile
+    if (id === 'profile') {
+        document.getElementById('user-selection-area').style.display = 'none';
+        document.getElementById('main-start-btn').style.display = 'block';
+    }
+}
+
+function showUserSelection() {
+    document.getElementById('main-start-btn').style.display = 'none';
+    document.getElementById('user-selection-area').style.display = 'flex';
+    refreshUserList();
 }
 
 function refreshUserList() {
     const container = document.getElementById('user-list-container');
+    if (appState.users.length === 0) {
+        container.innerHTML = `<div style="color:#666; margin:10px;" class="lang" data-zh="目前沒有學員" data-en="No users found">目前沒有學員</div>`;
+        return;
+    }
     container.innerHTML = appState.users.map((u, i) => `
         <div class="profile-item">
-            <span style="font-weight:bold; font-size:1.1rem;">👤 ${u.name}</span>
+            <span style="font-weight:bold; font-size:1.1rem; color:#FFF;">👤 ${u.name}</span>
             <div>
                 <button onclick="editUser(${i})" class="btn-sm btn-edit">✏️</button>
                 <button onclick="deleteUser(${i})" class="btn-sm btn-delete">🗑️</button>
-                <button onclick="openPicker(${i})" class="btn-sm" style="background:#FFCC00; color:#000;">▶️ 開始</button>
+                <button onclick="openPicker(${i})" class="btn-sm" style="background:#FFCC00; color:#000;">▶️ GO 進入遊戲</button>
             </div>
         </div>
     `).join('');
+    // Re-apply language translation to new elements
+    document.querySelectorAll('.lang').forEach(el => { el.innerText = el.getAttribute(`data-${appState.lang}`); });
 }
 
 function handleCreateUser() {
     const input = document.getElementById('name-input');
     if (!input.value.trim()) return;
-    appState.users.push({ name: input.value.trim() });
+    // Add g2Steps: 0 to the initial object
+    appState.users.push({ name: input.value.trim(), g1Best: 0, g2Level: 1, g2Steps: 0 });
     saveAndRefresh();
     input.value = '';
 }
@@ -242,6 +452,7 @@ function saveAndRefresh() {
 
 /* --- 彈窗選擇 --- */
 function openPicker(i) {
+    appState.currentUserId=i; // Remember which user was clicked
     document.getElementById('current-name-display').innerText = appState.users[i].name;
     document.getElementById('game-picker-modal').style.display = 'flex';
 }
@@ -403,20 +614,30 @@ function endGame1() {
 let g2Data = { 
     level: 1, size: 5, path: [], playerIdx: 0, 
     isShowing: false, currentLevelId: 0,
-    totalSteps: 0, cheesePos: "" 
+    totalSteps: 0, cheesePos: "",
+    lives: 3 // Track hearts
 };
 
 function initGame2() {
-    g2Data.level = 1;
-    g2Data.size = 5;
-    g2Data.totalSteps = 0;
-    g2Data.currentLevelId = 0;
-    // 重置介面顯示
-    const stepsEl = document.getElementById('g2-total-steps');
-    if (stepsEl) stepsEl.innerText = "0";
+    const user = appState.users[appState.currentUserId];
     
-    showView('game2'); // 切換到遊戲 2 畫面
-    startG2Level();    // 開始生成路徑
+    // Load progress from user profile
+    g2Data.level = user.g2Level || 1;
+    g2Data.totalSteps = user.g2Steps || 0; // Load saved steps
+    
+    // Calculate correct grid size based on level (increases every 3 levels)
+    g2Data.size = 5 + Math.floor(g2Data.level / 3);
+    if (g2Data.size > 8) g2Data.size = 8;
+    
+    g2Data.currentLevelId = 0;
+    g2Data.lives = 5; 
+
+    // Update UI
+    document.getElementById('g2-total-steps').innerText = g2Data.totalSteps;
+    document.getElementById('g2-level-display').innerText = g2Data.level;
+    
+    showView('game2');
+    startG2Level();
 }
 
 async function startG2Level() {
@@ -427,7 +648,7 @@ async function startG2Level() {
     const grid = document.getElementById('g2-grid');
     document.documentElement.style.setProperty('--grid-size', g2Data.size);
     grid.innerHTML = '';
-    document.getElementById('g2-lives-display').innerText = "❤️❤️❤️";
+    document.getElementById('g2-lives-display').innerText = "❤️".repeat(g2Data.lives) || "";
 
     // 建立網格
     for (let i=0; i<g2Data.size**2; i++) {
@@ -477,45 +698,131 @@ async function startG2Level() {
     document.getElementById('g2-hint').innerText = "👉 送老鼠去吃芝士！";
     g2Data.isShowing = false;
 
-    // 4. 點擊邏輯
+  // 4. Click Logic with Proximity Check & Fixed Heart Deduction
+   // 4. Revised Click Logic: Outline Colors & No Cross Emoji
     document.querySelectorAll('#g2-grid .cell').forEach(c => {
         c.onclick = async () => {
             if (g2Data.isShowing) return;
             const pos = c.dataset.pos;
+            const [clickX, clickY] = pos.split('-').map(Number);
+
+            let lastPos = g2Data.playerIdx === 0 ? "0-0" : g2Data.path[g2Data.playerIdx - 1];
+            const [lastX, lastY] = lastPos.split('-').map(Number);
+            const dist = Math.abs(clickX - lastX) + Math.abs(clickY - lastY);
+            
+            if (dist > 1 && pos !== g2Data.cheesePos) {
+                const msg = appState.lang === 'zh' ? "鼠鼠不能跑太遠" : "The mouse cannot jump too far";
+                alert(msg);
+                return;
+            }
             
             if (pos === g2Data.path[g2Data.playerIdx]) {
-                c.innerText = '🐾';
+                // CORRECT STEP - Green Outline & Mouse Icon
+                c.classList.add('path-correct');
+                c.innerText = '🐀'; // Changed from 🐾 to 🐀 per request
                 c.classList.add('correct');
                 g2Data.playerIdx++;
                 g2Data.totalSteps++;
                 document.getElementById('g2-total-steps').innerText = g2Data.totalSteps;
 
-                // 成功過關
                 if (g2Data.playerIdx === g2Data.path.length) {
                     g2Data.isShowing = true;
-                    document.getElementById('g2-hint').innerText = "😋 成功吃到了！";
-                    
-                    // 動態路徑回放
-                    for (let p of g2Data.path) {
-                        let t = grid.querySelector(`[data-pos="${p}"]`);
-                        t.innerText = '🐀';
-                        await new Promise(r => setTimeout(r, 100));
-                    }
+                    document.getElementById('g2-hint').innerText = appState.lang === 'zh' ? "😋 成功吃到了！" : "😋 Yummy!";
                     cheeseCell.innerText = '😋';
                     
+                    // SAVE PROGRESS TO USER PROFILE
+                    g2Data.level++;
+                    const user = appState.users[appState.currentUserId];
+                    user.g2Level = g2Data.level;
+                    user.g2Steps = g2Data.totalSteps; // Save the cumulative steps
+                    saveAndRefresh();
+
                     setTimeout(() => {
-                        g2Data.level++;
+                        // Increase size every 3 levels
                         if (g2Data.level % 3 === 0 && g2Data.size < 8) g2Data.size++;
+                        
+                        // Update the level display in the UI
+                        document.getElementById('g2-level-display').innerText = g2Data.level;
+                        
                         if (myLevelId === g2Data.currentLevelId) startG2Level();
                     }, 800);
                 }
-            } else if (pos !== g2Data.cheesePos) { // 點錯了 (點芝士不算錯，不予理會)
+            } else if (pos !== g2Data.cheesePos) {
+                // WRONG CLICK - Yellow or Red Outline
+                g2Data.isShowing = true; 
+                
+                // Assign persistent outlines
+                if (g2Data.path.includes(pos)) {
+                    c.classList.add('path-mismatch'); 
+                } else {
+                    c.classList.add('path-wrong');    
+                }
+                
                 c.classList.add('wrong');
-                setTimeout(() => { if (myLevelId === g2Data.currentLevelId) startG2Level(); }, 400);
+                const livesDisplay = document.getElementById('g2-lives-display');
+
+                grid.classList.add('grid-zoom-focus');
+                grid.style.transformOrigin = `${(c.offsetLeft + c.offsetWidth/2)}px ${(c.offsetTop + c.offsetHeight/2)}px`;
+                c.innerHTML = '<div class="cage-effect">🕸️<br>🐀</div>';
+
+                if (g2Data.lives > 0) {
+                    g2Data.lives--;
+                    setTimeout(() => {
+                        livesDisplay.innerText = "❤️".repeat(g2Data.lives) || "";
+                        grid.classList.remove('grid-zoom-focus');
+                        
+                        // FIX: Remove cage icon but KEEP the outline classes
+                        c.innerHTML = ''; 
+                        c.classList.remove('wrong'); // Remove the animation class only
+                        g2Data.isShowing = false;
+                    }, 1200);
+                } else {
+                    setTimeout(() => {
+                        livesDisplay.innerText = ""; 
+                        grid.classList.remove('grid-zoom-focus');
+                        showG2RetryModal(); 
+                    }, 1200);
+                }
             }
         };
     });
 }
+
+function showG2RetryModal() {
+    const penalty = Math.floor(g2Data.totalSteps * 0.3);
+    const msg = `心心已用完！\n要扣除 30% 分數 (${penalty} 步) 換取一個心心繼續嗎？`;
+    
+    // confirm() bypasses the retry selection box
+    if (confirm(msg)) {
+        g2Data.totalSteps -= penalty;
+        g2Data.lives = 1; 
+        
+        // Update UI displays
+        document.getElementById('g2-total-steps').innerText = g2Data.totalSteps;
+        document.getElementById('g2-lives-display').innerText = "❤️"; 
+        
+        // Resume directly
+        g2Data.isShowing = false; 
+    } else {
+        alert(`遊戲結束！總步數: ${g2Data.totalSteps}`);
+        quitGame();
+    }
+}
+
+function handleG2Retry(useHeart) {
+    document.getElementById('g2-retry-modal').style.display = 'none';
+    if (useHeart && g2Data.lives > 0) {
+        g2Data.lives--;
+        document.getElementById('g2-lives-display').innerText = "❤️".repeat(g2Data.lives) || "💔";
+        // Rollback: Clear only the wrong visual, keep playerIdx the same
+        document.querySelectorAll('#g2-grid .cell.wrong').forEach(el => el.classList.remove('wrong'));
+        g2Data.isShowing = false;
+    } else {
+        alert(`遊戲結束！總步數: ${g2Data.totalSteps}`);
+        quitGame();
+    }
+}
+
 
 
 
@@ -526,6 +833,60 @@ function quitGame() {
     clearTimeout(g1Data.timer);
     clearInterval(g1Data.gameClock);
     showView('profile');
+}
+
+function showLeaderboard(gameType) {
+    // gameType 1: Catch Mouse (Sort by g1Best)
+    // gameType 2: Maze (Sort by g2Level)
+    
+    let sortedUsers = [...appState.users].sort((a, b) => {
+        if (gameType === 1) return (b.g1Best || 0) - (a.g1Best || 0);
+        return (b.g2Level || 1) - (a.g2Level || 1);
+    }).slice(0, 10); // Get Top 10
+
+    let html = sortedUsers.map((u, i) => `
+        <div class="rank-item ${i < 3 ? 'rank-' + (i+1) : ''}">
+            <span>${i + 1}. ${u.name}</span>
+            <span>${gameType === 1 ? u.g1Best + ' pts' : 'Lv.' + u.g2Level}</span>
+        </div>
+    `).join('');
+
+    document.getElementById('leaderboard-content').innerHTML = html;
+    document.getElementById('leaderboard-view').style.display = 'flex';
+}
+
+function renderLeaderboard(gameNum) {
+    const list = document.getElementById('leaderboard-list');
+    const tab1 = document.getElementById('rank-tab-g1');
+    const tab2 = document.getElementById('rank-tab-g2');
+
+    // Update Tab UI
+    tab1.style.background = gameNum === 1 ? 'var(--accent)' : '#444';
+    tab2.style.background = gameNum === 2 ? '#4CAF50' : '#444';
+
+    // Sort Users
+    let sorted = [...appState.users].sort((a, b) => {
+        if (gameNum === 1) return (b.g1Best || 0) - (a.g1Best || 0);
+        return (b.g2Level || 1) - (a.g2Level || 1);
+    }).slice(0, 10); // Top 10 only
+
+    list.innerHTML = sorted.map((u, i) => `
+        <div class="rank-card ${i < 3 ? 'top-' + (i + 1) : ''}">
+            <div style="display:flex; align-items:center;">
+                <span class="rank-number">${i + 1}</span>
+                <span style="font-weight:bold;">${u.name}</span>
+            </div>
+            <span style="color:var(--accent); font-weight:bold;">
+                ${gameNum === 1 ? (u.g1Best || 0) + ' pts' : 'Lv.' + (u.g2Level || 1)}
+            </span>
+        </div>
+    `).join('');
+}
+
+// Helper to open the view
+function openHallOfFame() {
+    showView('leaderboard');
+    renderLeaderboard(1); // Default to Game 1
 }
 
 
