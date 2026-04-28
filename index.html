@@ -25,7 +25,11 @@
         }
 
         body {
-            background: var(--bg); 
+            background: 
+        radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%),
+        url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='0' y='20' font-size='10' opacity='0.05'%3E🐀%3C/text%3E%3C/svg%3E");
+    background-repeat: repeat;
+    animation: scrollBg 30s linear infinite;
             color: var(--text);
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0; 
@@ -38,6 +42,50 @@
             align-items: center; 
             height: 100vh;
         }
+
+        /* --- Funny Moving Background --- */
+body::before {
+    content: "🐀 🧀 🐾 🧀";
+    position: fixed;
+    top: 0; left: 0;
+    width: 200%; height: 200%;
+    font-size: 30px;
+    opacity: 0.03; /* Very subtle */
+    z-index: -1;
+    pointer-events: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 50px;
+    animation: bgMove 20s linear infinite;
+}
+
+@keyframes scrollBg {
+    from { background-position: 0 0; }
+    to { background-position: 400px 400px; }
+}
+
+/* --- Praise Animation --- */
+.praise-text {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 4rem;
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 20px var(--gold), 2px 2px 0 #000;
+    z-index: 9999;
+    pointer-events: none;
+    animation: praisePop 2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    white-space: nowrap;
+}
+
+@keyframes praisePop {
+    0% { transform: translate(-50%, -50%) scale(0) rotate(-20deg); opacity: 0; }
+    20% { transform: translate(-50%, -50%) scale(1.2) rotate(10deg); opacity: 1; }
+    80% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; } /* Hold visible */
+    100% { transform: translate(-50%, -70%) scale(0.8); opacity: 0; } /* Fade out upward */
+}
         /* Leaderboard Styling */
 .leaderboard-modal {
     background: rgba(15, 15, 26, 0.95);
@@ -618,30 +666,48 @@ let g2Data = {
     lives: 3 // Track hearts
 };
 
-function initGame2() {
+/* --- Updated Game 2 Initializer with Countdown --- */
+async function initGame2() {
     const user = appState.users[appState.currentUserId];
     
-    // Load progress from user profile
+    // Load progress
     g2Data.level = user.g2Level || 1;
-    g2Data.totalSteps = user.g2Steps || 0; // Load saved steps
-    
-    // Calculate correct grid size based on level (increases every 3 levels)
+    g2Data.totalSteps = user.g2Steps || 0;
     g2Data.size = 5 + Math.floor(g2Data.level / 3);
     if (g2Data.size > 8) g2Data.size = 8;
     
-    g2Data.currentLevelId = 0;
+    g2Data.currentLevelId++; // Increment to prevent overlapping logic
     g2Data.lives = 5; 
 
     // Update UI
     document.getElementById('g2-total-steps').innerText = g2Data.totalSteps;
     document.getElementById('g2-level-display').innerText = g2Data.level;
+    document.getElementById('g2-hint').innerText = "Ready?";
     
     showView('game2');
+
+    // --- Countdown Sequence ---
+    const grid = document.getElementById('g2-grid');
+    document.documentElement.style.setProperty('--grid-size', g2Data.size);
+    grid.innerHTML = ''; 
+
+    // Message context
+    const startMsg = appState.lang === 'zh' ? "記住老鼠路徑" : "Watch the path";
+    grid.innerHTML = `<div style="grid-column: 1/-1; grid-row: 1/-1; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #4CAF50; font-weight: bold; text-align: center;">${startMsg}</div>`;
+    await new Promise(r => setTimeout(r, 1200));
+
+    const countdowns = ['3', '2', '1', 'GO!'];
+    for (let s of countdowns) {
+        grid.innerHTML = `<div style="grid-column: 1/-1; grid-row: 1/-1; display: flex; align-items: center; justify-content: center; font-size: 5rem; color: #4CAF50; font-weight: bold; animation: pulse 0.5s;">${s}</div>`;
+        await new Promise(r => setTimeout(r, 800));
+    }
+    // --- End Countdown ---
+
     startG2Level();
 }
 
 async function startG2Level() {
-    const myLevelId = ++g2Data.currentLevelId;
+    const myLevelId = g2Data.currentLevelId;
     g2Data.playerIdx = 0;
     g2Data.isShowing = true;
     
@@ -700,94 +766,102 @@ async function startG2Level() {
 
   // 4. Click Logic with Proximity Check & Fixed Heart Deduction
    // 4. Revised Click Logic: Outline Colors & No Cross Emoji
-    document.querySelectorAll('#g2-grid .cell').forEach(c => {
-        c.onclick = async () => {
-            if (g2Data.isShowing) return;
-            const pos = c.dataset.pos;
-            const [clickX, clickY] = pos.split('-').map(Number);
+   // --- NEW STRENGTHENED INPUT LOGIC ---
+        document.querySelectorAll('#g2-grid .cell').forEach(c => {
+            c.onclick = async () => {
+                // 1. STRICT LOCK: Ignore any clicks while animations are playing
+                if (g2Data.isShowing) return;
 
-            let lastPos = g2Data.playerIdx === 0 ? "0-0" : g2Data.path[g2Data.playerIdx - 1];
-            const [lastX, lastY] = lastPos.split('-').map(Number);
-            const dist = Math.abs(clickX - lastX) + Math.abs(clickY - lastY);
-            
-            if (dist > 1 && pos !== g2Data.cheesePos) {
-                const msg = appState.lang === 'zh' ? "鼠鼠不能跑太遠" : "The mouse cannot jump too far";
-                alert(msg);
-                return;
-            }
-            
-            if (pos === g2Data.path[g2Data.playerIdx]) {
-                // CORRECT STEP - Green Outline & Mouse Icon
-                c.classList.add('path-correct');
-                c.innerText = '🐀'; // Changed from 🐾 to 🐀 per request
-                c.classList.add('correct');
-                g2Data.playerIdx++;
-                g2Data.totalSteps++;
-                document.getElementById('g2-total-steps').innerText = g2Data.totalSteps;
+                const pos = c.dataset.pos;
+                const [clickX, clickY] = pos.split('-').map(Number);
+                let lastPos = g2Data.playerIdx === 0 ? "0-0" : g2Data.path[g2Data.playerIdx - 1];
+                const [lastX, lastY] = lastPos.split('-').map(Number);
+                const dist = Math.abs(clickX - lastX) + Math.abs(clickY - lastY);
+                
+                // Proximity Check
+                if (dist > 1 && pos !== g2Data.cheesePos) {
+                    const msg = appState.lang === 'zh' ? "鼠鼠唔識飛，行近啲啦！" : "Mouse can't fly! Get closer.";
+                    alert(msg);
+                    return;
+                }
+                
+                if (pos === g2Data.path[g2Data.playerIdx]) {
+                    // --- CORRECT PATH ---
+                    c.classList.add('path-correct');
+                    c.innerText = '🐀';
+                    g2Data.playerIdx++;
+                    g2Data.totalSteps++;
+                    document.getElementById('g2-total-steps').innerText = g2Data.totalSteps;
 
-                if (g2Data.playerIdx === g2Data.path.length) {
-                    g2Data.isShowing = true;
-                    document.getElementById('g2-hint').innerText = appState.lang === 'zh' ? "😋 成功吃到了！" : "😋 Yummy!";
-                    cheeseCell.innerText = '😋';
+                    if (g2Data.playerIdx === g2Data.path.length) {
+                        g2Data.isShowing = true; // Lock for victory
+                        
+                        document.getElementById('g2-hint').innerText = appState.lang === 'zh' ? "😋 成功吃到了！" : "😋 Yummy!";
+                        cheeseCell.innerText = '😋';
+
+                        // Praise Animation
+                        const phrases = appState.lang === 'zh' 
+                            ? ["直覺大師!", "步法驚人!", "鼠界威龍!", "芝士達人!", "滿分!"] 
+                            : ["LEGENDARY!", "MOUSE BOSS!", "CHEEZE WHIZ!", "UNSTOPPABLE!", "WOW!"];
+                        const praiseEl = document.createElement('div');
+                        praiseEl.className = 'praise-text';
+                        praiseEl.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+                        document.body.appendChild(praiseEl);
+                        setTimeout(() => praiseEl.remove(), 1500);
+
+                        // Save Progress
+                        g2Data.level++;
+                        const user = appState.users[appState.currentUserId];
+                        user.g2Level = g2Data.level;
+                        user.g2Steps = g2Data.totalSteps;
+                        saveAndRefresh();
+
+                        // Transition to next level
+                        setTimeout(() => {
+                            if (g2Data.level % 3 === 0 && g2Data.size < 8) g2Data.size++;
+                            if (myLevelId === g2Data.currentLevelId) startG2Level();
+                        }, 1800);
+                    }
+                } else if (pos !== g2Data.cheesePos) {
+                    // --- WRONG PATH: LOCK ENGAGED ---
+                    g2Data.isShowing = true; 
                     
-                    // SAVE PROGRESS TO USER PROFILE
-                    g2Data.level++;
-                    const user = appState.users[appState.currentUserId];
-                    user.g2Level = g2Data.level;
-                    user.g2Steps = g2Data.totalSteps; // Save the cumulative steps
-                    saveAndRefresh();
+                    const isOnPath = g2Data.path.includes(pos);
+                    c.classList.add(isOnPath ? 'path-mismatch' : 'path-wrong');
+                    c.classList.add('wrong');
+                    
+                    document.getElementById('g2-hint').innerText = appState.lang === 'zh' ? "中計了！😱" : "Trapped! 😱";
+                    
+                    grid.classList.add('grid-zoom-focus');
+                    grid.style.transformOrigin = `${(c.offsetLeft + c.offsetWidth/2)}px ${(c.offsetTop + c.offsetHeight/2)}px`;
+                    c.innerHTML = '<div class="cage-effect">🕸️<br>🐀</div>';
 
-                    setTimeout(() => {
-                        // Increase size every 3 levels
-                        if (g2Data.level % 3 === 0 && g2Data.size < 8) g2Data.size++;
-                        
-                        // Update the level display in the UI
-                        document.getElementById('g2-level-display').innerText = g2Data.level;
-                        
-                        if (myLevelId === g2Data.currentLevelId) startG2Level();
-                    }, 800);
+                    if (g2Data.lives > 0) {
+                        g2Data.lives--;
+                        setTimeout(() => {
+                            document.getElementById('g2-lives-display').innerText = "❤️".repeat(g2Data.lives) || "";
+                            grid.classList.remove('grid-zoom-focus');
+                            
+                            // --- CRITICAL CLEANUP ---
+                            c.innerHTML = ''; 
+                            // This removes all mistake borders so the grid doesn't get "stuck"
+                            c.classList.remove('wrong', 'path-mismatch', 'path-wrong');
+                            
+                            document.getElementById('g2-hint').innerText = appState.lang === 'zh' ? "再試一次！" : "Try again!";
+                            
+                            // UNLOCK: Only allow clicking after everything is reset
+                            g2Data.isShowing = false;
+                        }, 1200);
+                    } else {
+                        setTimeout(() => {
+                            grid.classList.remove('grid-zoom-focus');
+                            showG2RetryModal(); 
+                        }, 1200);
+                    }
                 }
-            } else if (pos !== g2Data.cheesePos) {
-                // WRONG CLICK - Yellow or Red Outline
-                g2Data.isShowing = true; 
-                
-                // Assign persistent outlines
-                if (g2Data.path.includes(pos)) {
-                    c.classList.add('path-mismatch'); 
-                } else {
-                    c.classList.add('path-wrong');    
-                }
-                
-                c.classList.add('wrong');
-                const livesDisplay = document.getElementById('g2-lives-display');
-
-                grid.classList.add('grid-zoom-focus');
-                grid.style.transformOrigin = `${(c.offsetLeft + c.offsetWidth/2)}px ${(c.offsetTop + c.offsetHeight/2)}px`;
-                c.innerHTML = '<div class="cage-effect">🕸️<br>🐀</div>';
-
-                if (g2Data.lives > 0) {
-                    g2Data.lives--;
-                    setTimeout(() => {
-                        livesDisplay.innerText = "❤️".repeat(g2Data.lives) || "";
-                        grid.classList.remove('grid-zoom-focus');
-                        
-                        // FIX: Remove cage icon but KEEP the outline classes
-                        c.innerHTML = ''; 
-                        c.classList.remove('wrong'); // Remove the animation class only
-                        g2Data.isShowing = false;
-                    }, 1200);
-                } else {
-                    setTimeout(() => {
-                        livesDisplay.innerText = ""; 
-                        grid.classList.remove('grid-zoom-focus');
-                        showG2RetryModal(); 
-                    }, 1200);
-                }
-            }
-        };
-    });
-}
-
+            };
+        });
+    }
 function showG2RetryModal() {
     const penalty = Math.floor(g2Data.totalSteps * 0.3);
     const msg = `心心已用完！\n要扣除 30% 分數 (${penalty} 步) 換取一個心心繼續嗎？`;
