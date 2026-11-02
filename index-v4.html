@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>鼠鼠訓練營 2.5D - 場景版</title>
+<style>
+:root {
+    --acc:#ffd75e; --ok:#6fbf4a; --bad:#e2604c; --ink:#2a1c0e;
+    --panel:rgba(36,24,12,.85); --warm:#f3e3c2;
+}
+* { touch-action: pan-y; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { overscroll-behavior:none; margin:0; height:100%; }
+body {
+    font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif; color:#fff;
+    background:
+        radial-gradient(120% 60% at 50% 0%, rgba(255,200,110,.08), transparent 60%),
+        radial-gradient(circle at 50% 25%, #33241a 0%, #170f08 70%, #0f0a05 100%);
+    display:flex; flex-direction:column; align-items:center; height:100dvh; overflow:hidden;
+}
+.view { display:none; width:100%; height:100%; flex-direction:column; align-items:center; flex:1; min-height:0; }
+.view.active { display:flex; }
+button {
+    background:linear-gradient(180deg,#ffd75e,#f0b53a); color:#3a2404; border:none; font-weight:900;
+    padding:12px 26px; border-radius:14px; font-size:1rem; cursor:pointer; box-shadow:0 5px 0 #a8781f; transition:transform .08s;
+    font-family:inherit;
+}
+button:active { transform:translateY(3px); box-shadow:0 2px 0 #a8781f; }
+.btn-ghost { background:none; color:#e7d6b0; border:1px solid #8a6a3a; box-shadow:none; padding:8px 18px; font-size:.9rem; font-weight:700; }
+h1,h2 { margin:0; }
+
+/* ---------- Profile / menu ---------- */
+#view-profile { padding:18px; gap:14px; }
+.title-xl { font-size:2rem; font-weight:900; color:var(--warm); text-shadow:0 2px 0 rgba(0,0,0,.4); letter-spacing:2px; }
+.scene-cards { display:flex; flex-direction:column; gap:14px; width:min(92vw,420px); flex:1; min-height:0; overflow-y:auto; }
+.scene-card {
+    position:relative; border-radius:20px; overflow:hidden; min-height:170px; flex-shrink:0;
+    border:1px solid rgba(255,214,150,.4); box-shadow:0 16px 40px rgba(0,0,0,.5);
+    background-size:cover; background-position:center; cursor:pointer;
+}
+.scene-card .scrim { position:absolute; inset:0; background:linear-gradient(180deg, rgba(18,10,4,.05) 30%, rgba(12,7,3,.92) 82%); }
+.scene-card .label { position:absolute; left:16px; right:16px; bottom:12px; text-shadow:0 1px 4px rgba(0,0,0,.9); }
+.scene-card .label b { font-size:1.15rem; }
+.scene-card .label small { color:#e8d9b6; font-size:.85rem; display:block; margin-top:3px; }
+.scene-card svg { position:absolute; inset:0; width:100%; height:100%; }
+.user-dock { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; width:min(92vw,420px); }
+.chip { display:flex; align-items:center; gap:8px; background:var(--panel); border:1px solid #6b4d22; padding:8px 12px; border-radius:999px; font-weight:700; font-size:.9rem; }
+.chip.cur { border-color:var(--acc); box-shadow:0 0 12px rgba(255,215,94,.35); }
+.chip button { padding:2px 8px; font-size:.7rem; box-shadow:none; border-radius:8px; }
+#user-add { display:flex; gap:6px; }
+#user-add input { background:#241a0e; border:1px solid #6b4d22; color:#fff; padding:8px 12px; border-radius:999px; width:130px; font-size:.95rem; }
+
+/* ---------- HUD ---------- */
+.hud {
+    width:100%; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:linear-gradient(180deg, rgba(20,12,5,.85), rgba(20,12,5,.6)); border-bottom:1px solid rgba(255,214,150,.25);
+    flex-shrink:0; z-index:5;
+}
+.hud .cell-hud { display:flex; flex-direction:column; align-items:center; font-size:.72rem; color:#e8d9b6; min-width:56px; }
+.hud .val { font-size:1.25rem; font-weight:900; color:var(--warm); }
+.hud .val.bad { color:var(--bad); }
+.hud .name { font-size:.9rem; font-weight:800; color:#fff; }
+#hud-msg { font-weight:800; color:var(--acc); font-size:.92rem; text-align:center; }
+
+/* ---------- Scene stage ---------- */
+.stage { flex:1; min-height:0; width:100%; position:relative; display:flex; align-items:center; justify-content:center; padding:6px; }
+.scene-svg { width:100%; height:100%; max-width:560px; display:block; }
+.prop { cursor:default; }
+.prop.tappable { cursor:pointer; }
+.prop.hit-wrong { filter:brightness(.75) sepia(.4) hue-rotate(-30deg) saturate(2); }
+.marker { pointer-events:none; }
+.footnote {
+    width:100%; padding:8px 14px 12px; display:flex; gap:12px; align-items:center; justify-content:center;
+    background:linear-gradient(0deg, rgba(20,12,5,.85), rgba(20,12,5,.4)); border-top:1px solid rgba(255,214,150,.2); flex-shrink:0;
+}
+.found-line { display:flex; gap:6px; }
+.found-dot { width:16px; height:16px; border-radius:50%; border:2px solid var(--acc); display:inline-block; }
+.found-dot.on { background:var(--acc); box-shadow:0 0 8px rgba(255,215,94,.7); }
+
+/* ---------- animations ---------- */
+@keyframes pop-in { 0%{transform:scale(0) translateY(30%);opacity:0} 70%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
+.pop-in { animation:pop-in .3s ease-out both; transform-box:fill-box; transform-origin:center bottom; }
+@keyframes found-pop { 0%{transform:scale(1)} 40%{transform:scale(1.25,0.8)} 100%{transform:scale(1)} }
+.found-pop { animation:found-pop .35s ease-out both; transform-box:fill-box; transform-origin:center; }
+@keyframes shake-x { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px) rotate(-4deg)} 75%{transform:translateX(5px) rotate(4deg)} }
+.shake-x { animation:shake-x .35s ease-in-out 2; transform-box:fill-box; transform-origin:center; }
+@keyframes ring-pulse { 0%,100%{opacity:.25} 50%{opacity:.95} }
+.assist-ring { animation:ring-pulse .5s 3; }
+.peek-hop { transition:transform .25s ease-out; transform-box:fill-box; transform-origin:center bottom; }
+.mouse-walker { transition:transform .5s ease-out; }
+
+/* ---------- overlays ---------- */
+.coach-banner {
+    position:fixed; top:10%; left:50%; transform:translateX(-50%) scale(.8); z-index:60;
+    background:linear-gradient(135deg,#ffd75e,#f0a93a); color:#3a2404; font-weight:900; font-size:1.05rem;
+    padding:10px 24px; border-radius:999px; box-shadow:0 6px 24px rgba(255,180,80,.45); opacity:0; pointer-events:none;
+    transition:opacity .18s, transform .18s; max-width:88vw; text-align:center; white-space:nowrap;
+}
+.coach-banner.show { opacity:1; transform:translateX(-50%) scale(1); }
+.coach-banner.warn { background:linear-gradient(135deg,#ef8a5e,#e2604c); color:#fff; }
+.result-card {
+    position:fixed; inset:0; background:rgba(14,9,4,.88); z-index:70; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:14px; padding:20px;
+}
+.result-card .panel { background:#241a0e; border:2px solid var(--acc); border-radius:20px; padding:24px 26px; width:min(86vw,340px); text-align:center; box-shadow:0 10px 40px rgba(255,207,112,.25); }
+.result-card h2 { color:var(--acc); font-size:1.4rem; margin-bottom:8px; }
+.result-card .big { font-size:2.4rem; font-weight:900; margin:4px 0; color:#fff; }
+.result-card .sub { color:#cbb98f; font-size:.92rem; line-height:1.55; }
+@media (prefers-reduced-motion: reduce) { .pop-in,.found-pop,.shake-x,.assist-ring{animation:none!important} }
+</style>
+</head>
+<body>
+
+<!-- ================= SVG symbol library ================= -->
+<svg width="0" height="0" style="position:absolute">
+<defs>
+<!-- animals: full body, three angles -->
+<symbol id="mouse-side" viewBox="0 0 60 40">
+  <path d="M8 30 Q2 28 4 22" stroke="#8f97a8" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <ellipse cx="32" cy="27" rx="20" ry="11" fill="#a8b0c4"/>
+  <ellipse cx="30" cy="31" rx="13" ry="6" fill="#98a2b6"/>
+  <circle cx="47" cy="18" r="9" fill="#a8b0c4"/>
+  <circle cx="44" cy="9" r="4.5" fill="#eba3b3"/>
+  <path d="M40 12 L38 5 L44 10 Z" fill="#a8b0c4"/>
+  <circle cx="50.5" cy="16.5" r="1.8" fill="#20222a"/>
+  <circle cx="45" cy="21.5" r="1.4" fill="#3a2530"/>
+</symbol>
+<symbol id="mouse-peek" viewBox="0 0 50 42">
+  <circle cx="25" cy="30" r="11" fill="#a8b0c4"/>
+  <circle cx="16.5" cy="20" r="6" fill="#a8b0c4"/><circle cx="13.5" cy="19" r="3" fill="#eba3b3"/>
+  <circle cx="33.5" cy="20" r="6" fill="#a8b0c4"/><circle cx="36.5" cy="19" r="3" fill="#eba3b3"/>
+  <circle cx="21" cy="29" r="1.7" fill="#20222a"/><circle cx="29" cy="29" r="1.7" fill="#20222a"/>
+  <ellipse cx="25" cy="35" rx="2.2" ry="1.6" fill="#e58ea1"/>
+  <path d="M17 34 q-8 1 -10 -2" stroke="#DDD" stroke-width="1" fill="none"/>
+  <path d="M33 34 q8 1 10 -2" stroke="#DDD" stroke-width="1" fill="none"/>
+  <ellipse cx="17" cy="41" rx="4" ry="2.2" fill="#9aa3b6"/><ellipse cx="33" cy="41" rx="4" ry="2.2" fill="#9aa3b6"/>
+</symbol>
+<symbol id="mouse-back" viewBox="0 0 60 34">
+  <ellipse cx="30" cy="20" rx="20" ry="11" fill="#a8b0c4"/>
+  <ellipse cx="30" cy="17" rx="14" ry="7" fill="#b9c1d2"/>
+  <path d="M10 24 Q2 26 3 31" stroke="#8f97a8" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <ellipse cx="22" cy="30" rx="4.5" ry="2.5" fill="#9aa3b6"/><ellipse cx="38" cy="30" rx="4.5" ry="2.5" fill="#9aa3b6"/>
+</symbol>
+<symbol id="hamster-side" viewBox="0 0 60 40">
+  <ellipse cx="30" cy="26" rx="21" ry="13" fill="#f0b04a"/>
+  <ellipse cx="28" cy="28" rx="12" ry="7" fill="#fdeac2"/>
+  <circle cx="15" cy="10" r="5.5" fill="#f0b04a"/><circle cx="14" cy="10" r="2.8" fill="#eba3b3"/>
+  <circle cx="45" cy="10" r="5.5" fill="#f0b04a"/><circle cx="46" cy="10" r="2.8" fill="#eba3b3"/>
+  <circle cx="21" cy="22" r="2" fill="#20222a"/><circle cx="30" cy="22" r="2" fill="#20222a"/>
+  <circle cx="26" cy="29" r="3.4" fill="#e2685c"/>
+  <ellipse cx="52" cy="16" rx="4" ry="2.8" fill="#f7d9a0"/>
+</symbol>
+<symbol id="rabbit-side" viewBox="0 0 60 40">
+  <ellipse cx="32" cy="28" rx="19" ry="11" fill="#f0eeea"/>
+  <circle cx="47" cy="16" r="8.5" fill="#f0eeea"/>
+  <ellipse cx="36" cy="4" rx="3.4" ry="10" fill="#f0eeea" transform="rotate(-16 36 4)"/>
+  <ellipse cx="41" cy="3" rx="3.4" ry="10" fill="#f0eeea" transform="rotate(10 41 3)"/>
+  <circle cx="50" cy="14" r="1.7" fill="#20222a"/>
+  <ellipse cx="52" cy="18" rx="2.4" ry="1.8" fill="#e58ea1"/>
+  <circle cx="16" cy="20" r="4" fill="#fff"/>
+</symbol>
+<symbol id="chick-side" viewBox="0 0 50 40">
+  <circle cx="26" cy="24" r="14" fill="#ffdd55"/>
+  <path d="M12 20 Q6 18 7 13 M10 16 Q4 16 5 20" stroke="#ffdd55" stroke-width="0" fill="none"/>
+  <circle cx="21" cy="20" r="2" fill="#20222a"/>
+  <polygon points="27,24 34,26 27,29" fill="#f08a3c"/>
+  <ellipse cx="26" cy="37" rx="5" ry="1.8" fill="#ebc744"/>
+</symbol>
+<!-- props (no emoji anywhere) -->
+<symbol id="bale" viewBox="0 0 90 70">
+  <ellipse cx="45" cy="34" rx="38" ry="30" fill="#d9a94f"/>
+  <ellipse cx="45" cy="28" rx="34" ry="24" fill="#e8bd61"/>
+  <path d="M14 20 Q45 8 76 20 M11 30 Q45 18 79 30 M11 40 Q45 28 79 40" stroke="#c2913c" stroke-width="2.6" fill="none"/>
+  <path d="M45 2 L14 14 M45 2 L76 14" stroke="#c2913c" stroke-width="2" fill="none"/>
+  <ellipse cx="45" cy="34" rx="38" ry="30" fill="none" stroke="#a8791f" stroke-width="2.5"/>
+  <circle cx="30" cy="36" r="2" fill="#a8791f"/><circle cx="58" cy="42" r="2" fill="#a8791f"/>
+</symbol>
+<symbol id="bale-stack" viewBox="0 0 95 96">
+  <use href="#bale" x="0" y="26" width="90" height="70"/>
+  <use href="#bale" x="5" y="-24" width="80" height="62"/>
+</symbol>
+<symbol id="crate" viewBox="0 0 70 62">
+  <polygon points="10,14 60,14 68,22 18,22" fill="#c98d4b"/>
+  <polygon points="18,22 68,22 68,58 18,58" fill="#a8703a"/>
+  <rect x="18" y="22" width="50" height="36" fill="none" stroke="#7d5222" stroke-width="2"/>
+  <path d="M28 24 V56 M38 24 V56 M48 24" stroke="#8a5c26" stroke-width="2"/>
+  <rect x="22" y="32" width="42" height="8" fill="#8f5f2b" transform="skewX(0)"/>
+</symbol>
+<symbol id="bucket" viewBox="0 0 46 46">
+  <polygon points="8,8 38,8 34,42 12,42" fill="#8fa3b3"/>
+  <polygon points="10,8 36,8 33,20" fill="#b9cbdb"/>
+  <ellipse cx="23" cy="9" rx="15" ry="4.5" fill="#6c8296"/>
+  <path d="M9 9 Q23 -4 37 9" stroke="#5d7183" stroke-width="2.5" fill="none"/>
+</symbol>
+<symbol id="sack" viewBox="0 0 44 50">
+  <path d="M12 8 Q8 30 6 34 Q4 46 14 47 L30 47 Q40 46 38 34 Q36 30 32 8 Q22 2 12 8 Z" fill="#c9a566"/>
+  <path d="M12 8 Q22 14 32 8" stroke="#8a6a3a" stroke-width="3" fill="none"/>
+  <path d="M14 20 Q22 26 30 20 M11 32 Q22 38 33 32" stroke="#b28d4e" stroke-width="2" fill="none"/>
+</symbol>
+<symbol id="rake" viewBox="0 0 40 110">
+  <line x1="12" y1="6" x2="12" y2="92" stroke="#9a6a3b" stroke-width="5" stroke-linecap="round"/>
+  <rect x="2" y="90" width="30" height="8" rx="3" fill="#6b4a24"/>
+  <path d="M5 98 V108 M11 98 V108 M17 98 V108 M23 98 V108 M29 98 V108" stroke="#6b4a24" stroke-width="3" stroke-linecap="round"/>
+</symbol>
+<symbol id="pot" viewBox="0 0 40 44">
+  <polygon points="8,10 32,10 28,40 12,40" fill="#c96a3a"/>
+  <rect x="6" y="5" width="28" height="7" rx="3" fill="#b55c2e"/>
+  <circle cx="20" cy="1.6" r="2.4" fill="#e2604c"/>
+  <path d="M20 4 L20 8" stroke="#4a7d33" stroke-width="2"/>
+</symbol>
+<symbol id="potbloom" viewBox="0 0 40 44">
+  <use href="#pot" width="40" height="44"/>
+  <circle cx="20" cy="2" r="4.5" fill="#ffce54"/><circle cx="16" cy="0" r="2" fill="#ffce54"/><circle cx="24" cy="0" r="2" fill="#ffce54"/>
+</symbol>
+</defs>
+</svg>
+
+<!-- ================= menu ================= -->
+<section id="view-profile" class="view active">
+  <button onclick="toggleLanguage()" class="btn-ghost" style="position:absolute;top:12px;right:14px;" id="lang-btn">ZH / EN</button>
+  <h1 class="title-xl" style="margin-top:34px;" data-zh="鼠鼠訓練營" data-en="Mouse Academy">鼠鼠訓練營</h1>
+  <div class="scene-cards">
+    <div class="scene-card" onclick="startGame1()">
+      <div class="scrim"></div>
+      <svg viewBox="0 0 320 120" preserveAspectRatio="xMidYMid slice">
+        <rect width="320" height="120" fill="#c9955c"/>
+        <rect y="86" width="320" height="34" fill="#e8d7b6"/>
+        <use href="#rake" x="18" y="14" width="40" height="100"/>
+        <use href="#bale" x="70" y="24" width="90" height="70"/>
+        <use href="#bucket" x="170" y="66" width="46" height="46"/>
+        <use href="#sack" x="230" y="40" width="44" height="50"/>
+        <path d="M120 108 h24" stroke="#a8791f" stroke-width="6" stroke-linecap="round"/>
+        <use href="#mouse-back" x="96" y="84" width="60" height="34"/>
+      </svg>
+      <div class="label"><b data-zh="🌾 場景一：乾草穀倉" data-en="🌾 Scene 1: Hay Barn">🌾 場景一：乾草穀倉</b>
+      <small data-zh="草堆裡找老鼠 · 多隻 · 觀察辨認" data-en="Spot hidden mice · several per level">草堆裡找老鼠 · 多隻 · 觀察辨認</small>
+      <small id="card1-best" style="color:#ffd75e"></small></div>
+    </div>
+    <div class="scene-card" onclick="startGame2()">
+      <div class="scrim"></div>
+      <svg viewBox="0 0 320 120" preserveAspectRatio="xMidYMid slice">
+        <rect width="320" height="120" fill="#79a45c"/>
+        <rect y="0" width="320" height="24" fill="#6f4f2a"/>
+        <path d="M0 8h320M0 16h320" stroke="#5b3f20" stroke-width="2"/>
+        <use href="#crate" x="40" y="50" width="70" height="62"/>
+        <use href="#potbloom" x="140" y="78" width="40" height="44"/>
+        <use href="#bucket" x="200" y="70" width="46" height="46"/>
+        <path d="M28 104 Q90 84 160 96 T300 88" stroke="#efe3cb" stroke-width="7" fill="none" stroke-dasharray="16 12" stroke-linecap="round"/>
+        <use href="#	mouse-side" x="250" y="70" width="60" height="40"/>
+      </svg>
+      <div class="label"><b data-zh="🧠 場景二：後院追蹤" data-en="🧠 Scene 2: Backyard Tracking">🧠 場景二：後院追蹤</b>
+      <small data-zh="記住老鼠經過的工具，按順序重現" data-en="Memorize which props the mouse passed, in order">記住老鼠經過的工具，按順序重現</small>
+      <small id="card2-best" style="color:#ffd75e"></small></div>
+    </div>
+  </div>
+  <div id="user-dock"></div>
+  <div id="user-add">
+    <input id="name-input" placeholder="Name..." maxlength="12">
+    <button onclick="handleCreateUser()" data-zh="新增" data-en="Add">新增</button>
+  </div>
+  <button onclick="openHallOfFame()" class="btn-ghost" data-zh="榮譽榜" data-en="Hall of Fame">榮譽榜</button>
+</section>
+
+<!-- ================= leaderboard ================= -->
+<section id="view-leaderboard" class="view">
+  <div class="hud">
+    <button onclick="showView('profile')" class="btn-ghost">‹</button>
+    <h2 style="color:var(--acc)" data-zh="榮譽榜" data-en="Hall of Fame">榮譽榜</h2>
+    <span style="width:44px"></span>
+  </div>
+  <div style="display:flex;gap:10px;margin:14px 0;">
+    <button onclick="renderLeaderboard(1)" class="btn-ghost" style="border-color:var(--acc);" data-zh="場景一 分數" data-en="Scene 1 score">場景一 分數</button>
+    <button onclick="renderLeaderboard(2)" class="btn-ghost" data-zh="場景二 關卡" data-en="Scene 2 level">場景二 關卡</button>
+  </div>
+  <div id="lb-list" style="width:min(92vw,400px);display:flex;flex-direction:column;gap:8px;overflow-y:auto;"></div>
+</section>
+
+<!-- ================= shared game chrome ================= -->
+<section id="view-game" class="view">
+  <div class="hud">
+    <button onclick="quitGame()" class="btn-ghost" data-zh="退出" data-en="Quit">退出</button>
+    <div class="cell-hud"><span class="name" id="hud-lv">Lv 1</span></div>
+    <div class="cell-hud"><span data-zh="找出" data-en="Mice">找出</span><span class="val" id="hud-found">0/2</span></div>
+    <div class="cell-hud"><span data-zh="時間" data-en="Time">時間</span><span class="val" id="hud-time">20</span></div>
+    <div class="cell-hud"><span data-zh="最佳" data-en="Best">最佳</span><span class="val" id="hud-best">0</span></div>
+  </div>
+  <div class="stage"><svg id="stage-svg" class="scene-svg" viewBox="0 0 320 180"></svg></div>
+  <div class="footnote">
+    <button onclick="useHint()" class="btn-ghost" id="hint-btn" style="border-color:#3a8bd8;color:#8fd0ff;">💡 <span data-zh="提示" data-en="Hint">提示</span> <span id="hint-count">3</span></button>
+    <div id="hud-msg"></div>
+  </div>
+</section>
+
+<script>
+/* ============ state & users ============ */
+let lang='zh';
+let appState = { users: JSON.parse(localStorage.getItem('mouse_final_v16')||'[]'), currentUserId:null };
+function saveUsers(){ localStorage.setItem('mouse_final_v16', JSON.stringify(appState.users)); }
+function toggleLanguage(){
+    lang = lang==='zh'?'en':'zh';
+    document.querySelectorAll('[data-zh]').forEach(el=>{ el.textContent = el.getAttribute('data-'+lang); });
+    updateUserPop(); refreshBests(); hint.UI();
+}
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+function showView(id){ document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); document.getElementById('view-'+id).classList.add('active'); }
+function updateUserPop(){
+    const d=document.getElementById('user-dock');
+    d.innerHTML = appState.users.map((u,i)=>`<div class="chip ${i===appState.currentUserId?'cur':''}" onclick="pickUser(${i})">${u.name}<small style="opacity:.7">Lv${u.g2BestLevel||0}</small></div>`).join('')
+      || `<div class="chip" style="opacity:.6" data-zh="先新增一位學員" data-en="Add a player first">先新增一位學員</div>`;
+}
+function currentUser(){ return appState.users[appState.currentUserId]||appState.users[0]||null; }
+function pickUser(i){ appState.currentUserId=i; updateUserPop(); refreshBests(); }
+function handleCreateUser(){
+    const inp=document.getElementById('name-input'); const n=inp.value.trim(); if(!n)return;
+    appState.users.push({name:n, g1Best:0, g1Lv:1, g2Level:1, g2Steps:0, g2BestLevel:0}); saveUsers();
+    inp.value=''; appState.currentUserId=appState.users.length-1; updateUserPop(); refreshBests();
+}
+function refreshBests(){
+    const u=currentUser();
+    document.getElementById('card1-best').textContent = u? (lang==='zh'? `個人最佳 ${u.g1Best||0} 分`:`Best ${u.g1Best||0} pts`):'';
+    document.getElementById('card2-best').textContent = u? (lang==='zh'? `最高關卡 Lv${Math.max(u.g2BestLevel||0,(u.g2Level||1)-0)}`:`Top Lv ${Math.max(u.g2BestLevel||0,u.g2Level||1)}`):'';
+}
+function openHallOfFame(){ showView('leaderboard'); renderLeaderboard(1); }
+function renderLeaderboard(n){
+    const list=document.getElementById('lb-list'); list.innerHTML='';
+    [...appState.users].sort((a,b)=> n===1?(b.g1Best||0)-(a.g1Best||0):(b.g2BestLevel||b.g2Level||1)-(a.g2BestLevel||a.g2Level||1)).slice(0,10)
+    .forEach((u,i)=>{
+        const d=document.createElement('div'); d.className='chip'; d.style.width='100%';
+        d.innerHTML=`<span style="width:24px;opacity:.7">${i+1}</span><span style="flex:1">${u.name}</span><span style="color:var(--acc);font-weight:800">${n===1?((u.g1Best||0)+''):('Lv '+(u.g2BestLevel||0))}</span>`;
+        list.appendChild(d);
+    });
+}
+/* coaching words */
+let W={};
+function setWords(){ W = { praise: lang==='zh'?['好眼力!','全找齊了!','觀察力驚人!','記憶力滿分!','鼠界名偵探!']:['Sharp eyes!','All found!','Great observer!','Memory master!','Mouse detective!'],
+    miss: lang==='zh'?['再仔細看看角落!','注意尾巴和耳朵!','資深老鼠躲在物件後面!','花盆邊也要看!']:['Check the corners!','Look for tails & ears!','Old mice hide behind props!','Peek over the edges!'],
+    tryAgain: lang==='zh'?['從頭再想一次!','這次留意轉彎!','慢慢回想!']:['Rethink it!','Watch the turns!','Take your time!'] }; }
+setWords();
+
+/* banner + result */
+let bannerEl;
+function banner(t,warn){ if(!bannerEl){bannerEl=document.createElement('div');bannerEl.className='coach-banner';document.body.appendChild(bannerEl);} bannerEl.classList.toggle('warn',!!warn); bannerEl.textContent=t; bannerEl.classList.add('show'); clearTimeout(banner.t); banner.t=setTimeout(()=>bannerEl.classList.remove('show'),1600); }
+function resultCard(title,big,sub,btn,onOk){
+    document.querySelectorAll('.result-card').forEach(e=>e.remove());
+    const c=document.createElement('div'); c.className='result-card';
+    c.innerHTML=`<div class="panel"><h2>${title}</h2><div class="big">${big}</div><div class="sub">${sub}</div></div><button id="rc-ok">${btn}</button>`;
+    document.body.appendChild(c); document.getElementById('rc-ok').onclick=()=>{c.remove(); onOk&&onOk();};
+}
+
+/* ============ SCENE DATA ============ */
+const PROPS = [
+  {id:'rake',   sym:'rake',       x:60,  y:96,  w:30, h:82, z:4},
+  {id:'baleL',  sym:'bale',       x:6,   y:74,  w:88, h:68, z:5},
+  {id:'baleR',  sym:'bale-stack', x:196, y:50,  w:96, h:98, z:5},
+  {id:'crate',  sym:'crate',      x:112, y:94,  w:64, h:56, z:6},
+  {id:'bucket', sym:'bucket',     x:262, y:116, w:40, h:40, z:7},
+  {id:'sack',   sym:'sack',       x:150, y:116, w:42, h:48, z:7},
+  {id:'pot',    sym:'potbloom',   x:212, y:128, w:30, h:34, z:8},
+];
+const HIDE_SPOTS = [
+  {prop:'baleL', pose:'side', dx:-26, dy:6,  scale:1,   front:false},
+  {prop:'baleL', pose:'peek', dx:14,  dy:-26, scale:.9, front:true},
+  {prop:'baleR', pose:'back', dx:-70, dy:36,  scale:1,   front:false},
+  {prop:'baleR', pose:'peek', dx:24,  dy:-30, scale:.9,  front:true},
+  {prop:'crate', pose:'peek', dx:6,   dy:-18, scale:.85, front:true},
+  {prop:'crate', pose:'side', dx:-44, dy:20,  scale:.8,  front:false},
+  {prop:'bucket',pose:'peek', dx:-6,  dy:-22, scale:.7,  front:true},
+  {prop:'sack',  pose:'side', dx:-40, dy:18,  scale:.75, front:false},
+  {prop:'sack',  pose:'peek', dx:2,   dy:-20, scale:.65, front:true},
+  {prop:'pot',   pose:'back', dx:-46, dy:-4,  scale:.6,  front:false},
+  {prop:'rake',  pose:'side', dx:36,  dy:26,  scale:.7,  front:false},
+];
+const POSE_W={side:60,peek:50,back:60}, POSE_H={side:40,peek:42,back:34};
+const DECOYS=['hamster-side','rabbit-side','chick-side'];
+const SVGNS='http://www.w3.org/2000/svg';
+function el(name,attrs){ const e=document.createElementNS(SVGNS,name); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
+function addUse(parent,sym,x,y,w,h){
+    const u=el('use',{href:'#'+sym,x,y,width:w,height:h}); parent.appendChild(u); return u;
+}
+function propById(id){ return PROPS.find(p=>p.id===id); }
+
+function barnBg(svg){
+    svg.appendChild(el('rect',{width:320,height:116,fill:'#c9955c'}));
+    for(let i=1;i<7;i++) svg.appendChild(el('line',{x1:0,x2:320,y1:116-i*14,y2:116-i*14,stroke:'#b8814a','stroke-width':1.4}));
+    svg.appendChild(el('rect',{x:14,y:12,width:44,height:34,rx:6,fill:'#f6ead0',stroke:'#9a6a3b','stroke-width':3}));
+    svg.appendChild(el('line',{x1:36,y1:12,x2:36,y2:46,stroke:'#9a6a3b','stroke-width':3}));
+    svg.appendChild(el('rect',{y:116,width:320,height:64,fill:'#e2cfa5'}));
+    svg.appendChild(el('line',{x1:0,x2:320,y1:116,y2:116,stroke:'#a97b47','stroke-width':3}));
+    [[40,150],[120,168],[240,158],[300,140],[196,172],[80,140],[266,170]].forEach(([sx,sy])=>{
+        svg.appendChild(el('path',{d:`M${sx} ${sy} q6 -3 12 0`,stroke:'#d9a94f','stroke-width':2,fill:'none'}));
+    });
+    svg.appendChild(el('ellipse',{cx:160,cy:210,rx:190,ry:16,fill:'rgba(0,0,0,.22)'}));
+}
+function ring(parent,x,y,rx,color){
+    const c=el('ellipse',{cx:x,cy:y,rx,ry:rx*.45,fill:'none',stroke:color,'stroke-width':'3.5',class:'assist-ring'});
+    parent.appendChild(c); return c;
+}
+
+/* ============ GAME 1: find hidden mice ============ */
+let G={ clock:null, active:false };
+const hint = {
+    UI(){ const b=document.getElementById('hint-btn');
+        if(G.mode!==1){ b.style.display='none'; return; } b.style.display='';
+        document.getElementById('hint-count').textContent = G.hints; },
+    use(){ G.mode===1?hintG1():hintG2(); }
+};
+function startGame1(){
+    if(!appState.users.length){ banner(lang==='zh'?'先新增學員!':'Add a player first!',true); return; }
+    G.mode=1; startGame1Level(currentUser().g1Lv||1);
+}
+function startGame1Level(lv){
+    G.level=lv; G.active=true; G.found=0; G.score=0; G.hints=3; showView('game'); hint.UI();
+    document.getElementById('hud-lv').textContent='Lv '+G.level;
+    const svg=document.getElementById('stage-svg'); svg.innerHTML='';
+    barnBg(svg);
+    const count=Math.min(2+Math.floor((lv-1)/2),5);
+    const spots=[...HIDE_SPOTS].sort(()=>Math.random()-.5).slice(0,count);
+    G.total=count;
+    const used=new Set(spots.map(s=>s.prop));
+    // decoys (wrong animals; a decoy may share with a mouse spot? keep distinct)
+    const decoySpots=[];
+    const decoyN=Math.min(1+Math.floor(lv/2),5);
+    let guard=0;
+    while(decoySpots.length<decoyN && guard++<60){
+        const s=rnd(HIDE_SPOTS);
+        if(spots.includes(s)||decoySpots.includes(s)) continue;
+        decoySpots.push(s);
+    }
+    function drawActor(s, sym, isMouse){
+        const prop=propById(s.prop);
+        const pw=POSE_W[s.pose]*s.scale, ph=POSE_H[s.pose]*s.scale;
+        const px=prop.x+s.dx, py=prop.y+s.dy;
+        const g=el('g',{class:isMouse?'actor-mouse':'actor-decoy'});
+        const hit=el('rect',{x:px-5,y:py-5,width:pw+10,height:ph+10,fill:'transparent'});
+        g.appendChild(hit);
+        addUse(g,sym,px,py,pw,ph);
+        hit.addEventListener('click',isMouse?()=>foundMouse(g):()=>wrongTap(g,s));
+        return g;
+    }
+    behindLayer: {
+        // animals drawn before props appear to be behind them
+        spots.filter(s=>!s.front).forEach(s=>svg.appendChild(drawActor(s,'mouse-'+s.pose,true)));
+        decoySpots.filter(s=>!s.front).forEach(s=>svg.appendChild(drawActor(s,rnd(DECOYS),false)));
+    }
+    PROPS.forEach(p=>{
+        const g=el('g',{class:'prop-group',id:'prop-'+p.id});
+        const hit=el('rect',{x:p.x-2,y:p.y-2,width:p.w+4,height:p.h+4,fill:'transparent'});
+        hit.addEventListener('click',()=>wrongTap(g,null));
+        g.appendChild(hit);
+        addUse(g,p.sym,p.x,p.y,p.w,p.h);
+        svg.appendChild(g);
+    });
+    spots.filter(s=>s.front).forEach(s=>svg.appendChild(drawActor(s,'mouse-'+s.pose,true)));
+    decoySpots.filter(s=>s.front).forEach(s=>svg.appendChild(drawActor(s,rnd(DECOYS),false)));
+
+    document.getElementById('hud-found').textContent=`0/${G.total}`;
+    document.getElementById('hud-best').textContent=currentUser().g1Best||0;
+    G.timeLeft = 16 + count*4 + lv;      // generous: scene search, not reflex
+    hudTime();
+    banner(lang==='zh'?`找到 ${G.total} 隻老鼠!`:`Find ${G.total} mice!`);
+    startClock(()=>finishG1(false));
+}
+function foundMouse(g){
+    if(g.dataset.done||!G.active)return; g.dataset.done=1;
+    G.found++; G.score+=20;
+    g.classList.add('found-pop');
+    const u=g.querySelector('use');
+    ring(g, +u.getAttribute('x')+POSE_W.side/2, +u.getAttribute('y')+8, 15,'#6fbf4a');
+    document.getElementById('hud-found').textContent=`${G.found}/${G.total}`;
+    banner(rnd(W.praise));
+    if(G.found===G.total){
+        clearInterval(G.clock);
+        const bonus=G.timeLeft*2; G.score+=bonus;
+        const ur=currentUser(); const rec=(G.score)>(ur.g1Best||0);
+        if(rec){ ur.g1Best=G.score; }
+        ur.g1Lv=(G.level||1)+1; saveUsers();
+        setTimeout(()=>finishG1(true,rec,bonus),800);
+    }
+}
+function wrongTap(g,decoySpot){
+    if(!G.active)return;
+    g.classList.add('hit-wrong','shake-x'); setTimeout(()=>g.classList.remove('hit-wrong','shake-x'),700);
+    G.score=Math.max(0,G.score-8);
+    G.timeLeft=Math.max(1,G.timeLeft-5); hudTime();
+    banner(lang==='zh'?(decoySpot?'這不是老鼠! −5秒':'這裡沒有老鼠… −5秒'):'Not a mouse… −5s',true);
+}
+function hudTime(){ const t=document.getElementById('hud-time'); t.textContent=G.timeLeft<10?G.timeLeft:G.timeLeft; t.classList.toggle('bad',G.timeLeft<10); }
+function startClock(onEnd){ clearInterval(G.clock); G.clock=setInterval(()=>{ if(!G.active)return; G.timeLeft--; hudTime(); if(G.timeLeft<=0){clearInterval(G.clock); onEnd();} },1000); }
+function hintG1(){
+    if(!G.active||G.mode!==1)return;
+    if(G.hints<=0){ banner(lang==='zh'?'提示用完啦!':'No hints left!',true); return; }
+    G.hints--;
+    const mouse=[...document.querySelectorAll('.actor-mouse')].find(m=>!m.dataset.done);
+    if(!mouse)return;
+    const u=mouse.querySelector('use');
+    ring(mouse, +u.getAttribute('x')+30, +u.getAttribute('y')+8, 18,'#7ec8ff');
+    hint.UI();
+}
+function finishG1(cleared,rec,bonus){
+    G.active=false; clearInterval(G.clock);
+    const u=currentUser(); const lvl=G.level||1;
+    const sub= cleared?
+        (lang==='zh'? `本關得分 ${G.score}${rec?' 🎊 新個人紀錄!':''} (含時間獎勵 ${bonus||0})<br>個人最佳 ${u.g1Best||0} 分`:
+                      `Score ${G.score}${rec?' 🎊 new best!':''} (time bonus ${bonus||0})<br>Best ${u.g1Best||0}`):
+        (lang==='zh'? `還有 ${G.total-G.found} 隻沒找到。<br>${rnd(W.tryAgain)}<br>個人最佳 ${u.g1Best||0} 分`: `Mice left: ${G.total-G.found}.<br>Best ${u.g1Best||0}`);
+    resultCard(cleared?(lang==='zh'?'全找到了!':'All found!'):(lang==='zh'?'時間到!':'Time!'),
+        cleared?G.score:G.score, sub, lang==='zh'?'繼續':'Continue', ()=>quitGame());
+}
+
+/* ============ GAME 2: memorize the route through props ============ */
+let G2={ show:false, route:[], idx:0, lives:5, level:1, steps:0, walker:null };
+const hintLeftG2 = { n:3 };
+function startGame2(){
+    if(!appState.users.length){ banner(lang==='zh'?'先新增學員!':'Add a player first!',true); return; }
+    const u=currentUser(); G2.level=u.g2Level||1; startGame2Level();
+}
+async function startGame2Level(){
+    const u=currentUser();
+    G2.idx=0; G2.lives=5; G2.stepCost=0; G2.show=true; G.active=true; G.mode=2;
+    hintLeftG2.n=3; showView('game'); hint.UI(); document.getElementById('hint-btn').style.display='';
+    document.getElementById('hint-count').textContent=3;
+    document.getElementById('hud-lv').textContent='Lv '+G2.level;
+    document.getElementById('hud-best').textContent = Math.max(u.g2BestLevel||0,G2.level-1);
+    document.getElementById('hud-msg').textContent='';
+    const svg=document.getElementById('stage-svg'); svg.innerHTML='';
+    barnBg(svg);
+    PROPS.forEach(p=>{
+        const g=el('g',{class:'prop-group prop tappable',id:'prop-'+p.id});
+        const hit=el('rect',{x:p.x-2,y:p.y-2,width:p.w+4,height:p.h+4,fill:'transparent'});
+        hit.addEventListener('click',()=>tapProp(g,p));
+        g.appendChild(hit);
+        addUse(g,p.sym,p.x,p.y,p.w,p.h);
+        svg.appendChild(g);
+    });
+    // route = sequence of distinct props, grows with level
+    const len=Math.min(3+G2.level,7);
+    G2.route=[...PROPS].sort(()=>Math.random()-.5).slice(0,len).map(p=>p.id);
+    // walker mouse side sprite
+    const w=el('g',{class:'mouse-walker'});
+    addUse(w,'mouse-side',0,0,60,40);
+    svg.appendChild(w);
+    G2.walker=w;
+    document.getElementById('hud-msg').textContent = lang==='zh'?'👀 看老鼠經過哪些物件…':'👀 Watch which props it passes…';
+    const speed=Math.max(650, 1000 - (G2.level*20));
+    for(const pid of G2.route){
+        const p=propById(pid);
+        ring(svg, p.x+p.w/2, p.y+p.h/2, p.w*.55, '#7ec8ff');
+        w.style.transition='transform '+speed+'ms ease-out';
+        w.style.transform=`translate(${p.x+p.w/2-30}px, ${p.y+p.h-40}px)`;
+        await new Promise(r=>setTimeout(r, speed+320));
+        ring(svg, p.x+p.w/2, p.y+p.h/2, 0.01,'#7ec8ff'); // clear ring
+        svg.querySelectorAll('.assist-ring').forEach(e=>e.remove());
+    }
+    w.style.display='none';
+    G2.show=false;
+    document.getElementById('hud-msg').textContent = lang==='zh'?'👉 按順序點擊物件!':'👉 Tap the props in order!';
+}
+function tapProp(g,p){
+    if(G2.show||!G.active)return;
+    const ok=G2.route[G2.idx]===p.id;
+    if(ok){
+        G2.idx++; G2.steps++; 
+        ring(g, p.x+p.w/2, p.y+p.h/2, p.w*.55,'#6fbf4a'); setTimeout(()=>g.querySelectorAll('.assist-ring').forEach(e=>e.remove()),900);
+        // mouse peeks at correct prop
+        const pk=addUse(g,'mouse-peek',p.x+p.w/2-18, p.y-30, 36, 30, '');
+        pk.setAttribute('class','peek-hop pop-in'); setTimeout(()=>pk.remove(),900);
+        document.getElementById('hud-msg').textContent=`✓ ${G2.idx}/${G2.route.length}`;
+        if(G2.idx===G2.route.length){
+            clearInterval(G.clock2);
+            G2.level++;
+            const u=currentUser();
+            const newLevel=G2.level-1;
+            if(newLevel>(u.g2BestLevel||0)){ u.g2BestLevel=newLevel; }
+            u.g2Level=G2.level; u.g2Steps=(u.g2Steps||0)+G2.steps; saveUsers();
+            G2.show=true;
+            setTimeout(()=>{ const rec=newLevel===(u.g2BestLevel||0)&&newLevel>1;
+                banner(rec?(lang==='zh'?'🎊 新關卡紀錄!':'🎊 New level record!'):rnd(W.praise));
+                setTimeout(()=>startGame2Level(),1400); },900);
+        }
+    } else {
+        G2.show=true;
+        g.classList.add('hit-wrong','shake-x'); setTimeout(()=>g.classList.remove('hit-wrong','shake-x'),700);
+        G2.lives--;
+        banner(lang==='zh'?'記錯了! 想想路線…':'Wrong! Rethink…',true);
+        setTimeout(()=>{
+            g.querySelectorAll('.assist-ring').forEach(e=>e.remove());
+            if(G2.lives>0){
+                document.getElementById('hud-msg').textContent = lang==='zh'?'💡 藍圈提示: 下一站':'💡 Blue ring: next stop';
+                const p2=propById(G2.route[G2.idx]); if(p2){ ring(g, p2.x+p2.w/2, p2.y+p2.h/2, p2.w*.55,'#7ec8ff'); setTimeout(()=>g.querySelectorAll('.assist-ring').forEach(e=>e.remove()),1600); }
+                G2.show=false;
+            } else {
+                const u=currentUser();
+                const best=Math.max(u.g2BestLevel||0,G2.level-1);
+                if(G2.level-1>=(u.g2BestLevel||0)) u.g2BestLevel=G2.level-1;
+                saveUsers();
+                resultCard(lang==='zh'?'記憶訓練結束':'Training complete',
+                    'Lv '+(G2.level-1),
+                    (lang==='zh'?`最高關卡 Lv${Math.max(best,u.g2BestLevel||0)}<br>走過 ${u.g2Steps||G2.steps} 步<br>${rnd(W.tryAgain)}`:`Top Lv${Math.max(best,u.g2BestLevel||0)}<br>${rnd(W.tryAgain)}`),
+                    lang==='zh'?'回訓練營':'Back', ()=>quitGame());
+            }
+        },1000);
+    }
+}
+function hintG2(){
+    if(G2.show||!G.active)return;
+    if(hintLeftG2.n<=0){
+        if((G2.steps||0)<5){ banner(lang==='zh'?'步數不足!':'Not enough steps!',true); return; }
+        G2.steps-=5;
+    } else hintLeftG2.n--;
+    const p=propById(G2.route[G2.idx]); if(!p)return;
+    const g=document.getElementById('prop-'+p.id);
+    ring(g, p.x+p.w/2, p.y+p.h/2, p.w*.55,'#7ec8ff');
+    setTimeout(()=>g.querySelectorAll('.assist-ring').forEach(e=>e.remove()),1600);
+}
+
+/* ============ shared ============ */
+function quitGame(){ G.active=false; G2.show=true; clearInterval(G.clock); showView('profile'); refreshBests(); updateUserPop(); }
+function useHint(){ hint.use(); }
+
+/* touch lockdown */
+document.addEventListener('contextmenu',e=>e.preventDefault());
+let lastTap=0;
+document.addEventListener('touchend',e=>{ const n=Date.now(); if(n-lastTap<300)e.preventDefault(); lastTap=n; },{passive:false});
+
+window.addEventListener('error',e=>{ banner('⚠️ '+e.message.slice(0,60),true); });
+window.onload=()=>{ updateUserPop(); refreshBests(); hint.UI(); };
+</script>
+</body>
+</html>
