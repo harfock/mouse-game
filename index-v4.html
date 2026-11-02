@@ -431,10 +431,12 @@ function startGame1Level(lv){
         const pw=POSE_W[s.pose]*s.scale, ph=POSE_H[s.pose]*s.scale;
         const px=prop.x+s.dx, py=prop.y+s.dy;
         const g=el('g',{class:isMouse?'actor-mouse':'actor-decoy'});
+        // extended invisible hit area
         const hit=el('rect',{x:px-5,y:py-5,width:pw+10,height:ph+10,fill:'transparent'});
         g.appendChild(hit);
         addUse(g,sym,px,py,pw,ph);
-        hit.addEventListener('click',isMouse?()=>foundMouse(g):()=>wrongTap(g,s));
+        // handler on the GROUP: taps on the visible art (<use>) bubble here too
+        g.addEventListener('click',isMouse?()=>foundMouse(g):()=>wrongTap(g,s));
         return g;
     }
     behindLayer: {
@@ -445,9 +447,9 @@ function startGame1Level(lv){
     PROPS.forEach(p=>{
         const g=el('g',{class:'prop-group',id:'prop-'+p.id});
         const hit=el('rect',{x:p.x-2,y:p.y-2,width:p.w+4,height:p.h+4,fill:'transparent'});
-        hit.addEventListener('click',()=>wrongTap(g,null));
         g.appendChild(hit);
         addUse(g,p.sym,p.x,p.y,p.w,p.h);
+        g.addEventListener('click',()=>wrongTap(g,null));
         svg.appendChild(g);
     });
     spots.filter(s=>s.front).forEach(s=>svg.appendChild(drawActor(s,'mouse-'+s.pose,true)));
@@ -527,9 +529,9 @@ async function startGame2Level(){
     PROPS.forEach(p=>{
         const g=el('g',{class:'prop-group prop tappable',id:'prop-'+p.id});
         const hit=el('rect',{x:p.x-2,y:p.y-2,width:p.w+4,height:p.h+4,fill:'transparent'});
-        hit.addEventListener('click',()=>tapProp(g,p));
         g.appendChild(hit);
         addUse(g,p.sym,p.x,p.y,p.w,p.h);
+        g.addEventListener('click',()=>tapProp(g,p));
         svg.appendChild(g);
     });
     // route = sequence of distinct props, grows with level
