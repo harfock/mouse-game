@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>鼠鼠訓練營 - 完整專業版</title>
+    <style>
+       :root {
+            /* Pro-Gamer Color Palette */
+            --bg: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%);
+            --card-bg: rgba(255, 255, 255, 0.08);
+            --text: #ffffff;
+            --accent: #00ff88; /* Neon Green */
+            --warning: #ffcc00; /* Neon Yellow */
+            --danger: #ff4444; /* Neon Red */
+            --grid-px: 75vmin; 
+            --grid-size: 5;
+            --gold: #ffd700;
+        }
+
+        * { 
+            touch-action: pan-y;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        body { overscroll-behavior: none; }
+
+        body {
+            background: 
+        radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%),
+        url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='0' y='20' font-size='10' opacity='0.05'%3E🐀%3C/text%3E%3C/svg%3E");
+    background-repeat: repeat;
+    animation: scrollBg 30s linear infinite;
+            color: var(--text);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0; 
+            /* Strict 2% Blank Space at Top and Bottom */
+            padding: 2vh 0; 
+            box-sizing: border-box; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            height: 100vh;
+        }
+
+        /* --- Funny Moving Background --- */
+body::before {
+    content: "🐀 🧀 🐾 🧀";
+    position: fixed;
+    top: 0; left: 0;
+    width: 200%; height: 200%;
+    font-size: 30px;
+    opacity: 0.03; /* Very subtle */
+    z-index: -1;
+    pointer-events: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 50px;
+    animation: bgMove 20s linear infinite;
+}
+
+@keyframes scrollBg {
+    from { background-position: 0 0; }
+    to { background-position: 400px 400px; }
+}
+
+/* --- Praise Animation --- */
+.praise-text {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 4rem;
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 20px var(--gold), 2px 2px 0 #000;
+    z-index: 9999;
+    pointer-events: none;
+    animation: praisePop 2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    white-space: nowrap;
+}
+
+@keyframes praisePop {
+    0% { transform: translate(-50%, -50%) scale(0) rotate(-20deg); opacity: 0; }
+    20% { transform: translate(-50%, -50%) scale(1.2) rotate(10deg); opacity: 1; }
+    80% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; } /* Hold visible */
+    100% { transform: translate(-50%, -70%) scale(0.8); opacity: 0; } /* Fade out upward */
+}
+        /* Leaderboard Styling */
+.leaderboard-modal {
+    background: rgba(15, 15, 26, 0.95);
+    border: 2px solid var(--accent);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
+}
+
+.rank-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    margin: 4px 0;
+    background: var(--card-bg);
+    border-radius: 8px;
+}
+
+.rank-1 { border-left: 4px solid var(--gold); color: var(--gold); }
+
+        /* --- View Control --- */
+        .view { 
+            display: none; 
+            width: 100%; 
+            flex-grow: 1; 
+            padding: 10px; 
+            text-align: center; 
+            flex-direction: column; 
+            align-items: center; 
+            /* Use flex-start to ensure top content (legend/title) is never cut off */
+            justify-content: flex-start; 
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .view.active { display: flex; }
+
+        /* --- Modern UI Components --- */
+        .ui-card {
+            width: 95%;
+            max-width: 450px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 15px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            margin-bottom: 12px;
+            flex-shrink: 0; /* Prevents card from shrinking on small screens */
+        }
+
+        .rule-card { 
+            background: rgba(0, 0, 0, 0.3); 
+            border-left: 4px solid var(--accent); 
+            padding: 12px; 
+            margin: 8px 0; 
+            text-align: left; 
+            font-size: 0.9rem; 
+            border-radius: 4px;
+        }
+
+        /* --- Legend Badges --- */
+        .badge-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* --- Grid System --- */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(var(--grid-size), 1fr);
+            grid-template-rows: repeat(var(--grid-size), 1fr);
+            gap: 6px;
+            width: var(--grid-px);
+            height: var(--grid-px);
+            background: rgba(0, 0, 0, 0.4); 
+            padding: 10px; 
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .cell {
+            background: rgba(255, 255, 255, 0.08); 
+            border-radius: 8px;
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            font-size: calc(var(--grid-px) / var(--grid-size) * 0.6);
+            aspect-ratio: 1 / 1;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+
+        /* --- Visual Feedback & Outlines --- */
+        .path-correct { 
+            border: 3px solid var(--accent) !important; 
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+            background: rgba(0, 255, 136, 0.1) !important;
+        }
+        .path-mismatch { 
+            border: 3px solid var(--warning) !important; 
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
+            background: rgba(255, 204, 0, 0.1) !important;
+        }
+        .path-wrong { 
+            border: 3px solid var(--danger) !important; 
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.4);
+            background: rgba(255, 68, 68, 0.1) !important;
+        }
+
+        .hit-effect { background: #FFF !important; transform: scale(1.1); }
+        .grid-zoom-focus { transition: transform 0.6s ease-in-out; transform: scale(2.2); z-index: 10; }
+
+        /* --- Buttons --- */
+        button { 
+            background: var(--accent); 
+            color: #001a11; 
+            border: none; 
+            padding: 12px 24px; 
+            font-size: 1rem; 
+            font-weight: 800; 
+            border-radius: 12px; 
+            cursor: pointer;
+            box-shadow: 0 4px 0 #009e54;
+            transition: transform 0.1s;
+        }
+        button:active { transform: translateY(2px); box-shadow: 0 2px 0 #009e54; }
+        .btn-sm { padding: 6px 14px; font-size: 0.8rem; box-shadow: none; }
+        .btn-delete { background: var(--danger); color: white; box-shadow: 0 4px 0 #990000; }
+
+        /* --- Animations --- */
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .cage-effect { font-size: 1.5rem; animation: pulse 0.4s infinite; }
+
+/* --- Game 2 Outline Styles (Fixed Visibility) --- */
+        .path-correct { border: 4px solid #4CAF50 !important; background: rgba(76, 175, 80, 0.1) !important; }   /* Green */
+        .path-mismatch { border: 4px solid #FFCC00 !important; background: rgba(255, 204, 0, 0.1) !important; } /* Yellow */
+        .path-wrong { border: 4px solid #F44336 !important; background: rgba(244, 67, 54, 0.1) !important; }    /* Red */
+
+        /* Remove solid backgrounds that cover outlines */
+        .correct { /* Keep empty or add scaling effect */ transform: scale(1.02); }
+        .wrong { /* Keep empty to allow outlines to show */ }
+
+.rank-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--card-bg);
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+.top-1 { border-left: 5px solid #FFD700; background: rgba(255, 215, 0, 0.1); }
+.top-2 { border-left: 5px solid #C0C0C0; background: rgba(192, 192, 192, 0.1); }
+.top-3 { border-left: 5px solid #CD7F32; background: rgba(205, 127, 50, 0.1); }
+.rank-number { font-weight: 800; width: 30px; }
+
+    </style>
+    <style id="enhance-style">
+/* --- 2.5D board + animations --- */
+.game-grid { perspective: 900px; }
+#view-game1 .game-grid, #view-game2 .game-grid {
+    transform-style: preserve-3d;
+    transform: rotateX(7deg);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.55);
+    border-radius: 16px;
+    border: 3px solid rgba(0,255,136,0.25);
+}
+#view-game1 .game-grid { transition: none; }
+
+.cell { position: relative; transition: transform 0.08s; }
+
+@keyframes spawn-pop {
+    0% { transform: scale(0) translateY(40%); opacity: 0; }
+    70% { transform: scale(1.15) translateY(0); opacity: 1; }
+    100% { transform: scale(1) translateY(0); }
+}
+.cell > * { animation: spawn-pop 0.25s ease-out both; }
+
+@keyframes squash {
+    0% { transform: scale(1.25, 0.7); }
+    60% { transform: scale(0.85, 1.15); }
+    100% { transform: scale(1); }
+}
+.hit-effect { animation: squash 0.3s ease-out both !important; }
+
+/* drop shadow = elevation */
+#view-game1 .cell:not(:empty)::after, #view-game2 .cell:not(:empty)::after {
+    content: ""; position: absolute; left: 10%; right: 10%; bottom: 6%;
+    height: 10%; border-radius: 50%; background: rgba(0,0,0,0.35); z-index: -1;
+}
+
+@keyframes sparkle {
+    0%,100% { transform: scale(1) rotate(0deg); opacity: .85; }
+    50% { transform: scale(1.4) rotate(25deg); opacity: 1; }
+}
+.cage-effect { animation: shake 0.4s ease-in-out 2 both; }
+@keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px) rotate(-6deg); }
+    75% { transform: translateX(6px) rotate(6deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cell > *, .hit-effect, .cage-effect { animation: none !important; }
+}
+    </style>
+    <style id="art-style">
+/* ===== v3: character art (replaces emoji faces) ===== */
+/* Inner text stays in the DOM for game logic; art is drawn on top. */
+#view-game1 .cell, #view-game2 .cell {
+    background-repeat: no-repeat;
+    background-position: center 78%;
+    background-size: 74%;
+    color: transparent !important;
+}
+/* elevate animals off the board */
+#view-game1 .cell, #view-game2 .cell { background-blend-mode: normal; }
+
+.cell[data-k="🐀"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M46 44q10 1 12-6' stroke='%23a8b0c0' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='30' cy='42' rx='22' ry='15' fill='%23a8b0c0'/%3E%3Ccircle cx='48' cy='30' r='12' fill='%23a8b0c0'/%3E%3Ccircle cx='46' cy='19' r='5' fill='%23ef9fb0'/%3E%3Ccircle cx='55' cy='17' r='6' fill='%23a8b0c0'/%3E%3Ccircle cx='44' cy='27' r='2.4' fill='%23222'/%3E%3Ccircle cx='52' cy='26' r='2.4' fill='%23222'/%3E%3Cellipse cx='49' cy='34' rx='2.4' ry='1.8' fill='%23e26c7f'/%3E%3C/svg%3E");
+}
+.cell[data-k="🧀"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M6 42 32 20l26 0c2 12 2 16 0 22L6 42z' fill='%23ffc93c'/%3E%3Cpath d='M6 42c0-10 2-16 2-16l24 0-2 18z' fill='%23ffd97a'/%3E%3Ccircle cx='40' cy='30' r='4' fill='%23e6a72e'/%3E%3Ccircle cx='24' cy='35' r='3' fill='%23e6a72e'/%3E%3Ccircle cx='46' cy='38' r='2.5' fill='%23e6a72e'/%3E%3C/svg%3E");
+}
+.cell[data-k="🐹"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cellipse cx='32' cy='38' rx='22' ry='20' fill='%23f5b342'/%3E%3Cellipse cx='20' cy='22' rx='6' ry='8' fill='%23f5b342'/%3E%3Cellipse cx='44' cy='22' rx='6' ry='8' fill='%23f5b342'/%3E%3Cellipse cx='20' cy='22' rx='3' ry='4.5' fill='%23ef9fb0'/%3E%3Cellipse cx='44' cy='22' rx='3' ry='4.5' fill='%23ef9fb0'/%3E%3Cellipse cx='32' cy='40' rx='13' ry='11' fill='%23fff3d6'/%3E%3Ccircle cx='25' cy='34' r='2.6' fill='%23222'/%3E%3Ccircle cx='39' cy='34' r='2.6' fill='%23222'/%3E%3Ccircle cx='32' cy='44' r='4' fill='%23e26c7f'/%3E%3C/svg%3E");
+}
+.cell[data-k="🐰"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cellipse cx='24' cy='16' rx='6' ry='16' fill='%23f3f3f3' transform='rotate(-14 24 16)'/%3E%3Cellipse cx='40' cy='16' rx='6' ry='16' fill='%23f3f3f3' transform='rotate(14 40 16)'/%3E%3Cellipse cx='24' cy='16' rx='3' ry='10' fill='%23ef9fb0' transform='rotate(-14 24 16)'/%3E%3Cellipse cx='40' cy='16' rx='3' ry='10' fill='%23ef9fb0' transform='rotate(14 40 16)'/%3E%3Ccircle cx='32' cy='42' r='18' fill='%23f3f3f3'/%3E%3Ccircle cx='25' cy='38' r='2.8' fill='%23222'/%3E%3Ccircle cx='39' cy='38' r='2.8' fill='%23222'/%3E%3Cellipse cx='32' cy='46' rx='3.5' ry='2.6' fill='%23e26c7f'/%3E%3C/svg%3E");
+}
+.cell[data-k="🐥"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='36' r='19' fill='%23ffdd55'/%3E%3Cpolygon points='20,18 27,10 33,17' fill='%23ffdd55'/%3E%3Ccircle cx='26' cy='33' r='2.6' fill='%23222'/%3E%3Ccircle cx='38' cy='33' r='2.6' fill='%23222'/%3E%3Cpolygon points='29,39 39,41 29,45' fill='%23f09042'/%3E%3C/svg%3E");
+}
+.cell[data-k="🐱"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpolygon points='14,26 18,8 30,20' fill='%23f6a23c'/%3E%3Cpolygon points='50,26 46,8 34,20' fill='%23f6a23c'/%3E%3Ccircle cx='32' cy='36' r='19' fill='%23f6a23c'/%3E%3Ccircle cx='24' cy='33' r='2.8' fill='%23222'/%3E%3Ccircle cx='40' cy='33' r='2.8' fill='%23222'/%3E%3Cellipse cx='32' cy='44' rx='3.5' ry='2.6' fill='%23e26c7f'/%3E%3Cpath d='M12 40l8 2M10 44l8 0M52 40l-8 2M54 44l-8 0' stroke='%23e08a2b' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");
+}
+.cell[data-k="🐶"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cellipse cx='18' cy='30' rx='7' ry='12' fill='%23b9834f'/%3E%3Cellipse cx='46' cy='30' rx='7' ry='12' fill='%23b9834f'/%3E%3Ccircle cx='32' cy='36' r='19' fill='%23d1a06a'/%3E%3Cellipse cx='32' cy='44' rx='9' ry='7' fill='%23f2ddc0'/%3E%3Ccircle cx='24' cy='32' r='2.8' fill='%23222'/%3E%3Ccircle cx='40' cy='32' r='2.8' fill='%23222'/%3E%3Cellipse cx='32' cy='40' rx='4' ry='3' fill='%23222'/%3E%3C/svg%3E");
+}
+/* G1 / G2 countdown + result text stays readable */
+.grid-msg { color: transparent !important; }
+
+/* pick-list player cards only, menus keep real emojis */
+
+/* ===== v3: coaching layer styles ===== */
+.coach-banner {
+    position: fixed; top: 12%; left: 50%; transform: translateX(-50%) scale(.8);
+    background: linear-gradient(135deg, #00ff88, #00b45f); color: #001a11;
+    font-weight: 900; font-size: 1.15rem; padding: 10px 26px; border-radius: 30px;
+    box-shadow: 0 6px 24px rgba(0,255,136,.45); z-index: 3000; pointer-events: none;
+    opacity: 0; transition: opacity .18s, transform .18s; max-width: 88vw; text-align: center;
+}
+.coach-banner.warn { background: linear-gradient(135deg,#ffcc00,#ff9900); box-shadow: 0 6px 24px rgba(255,204,0,.4); }
+.coach-banner.show { opacity: 1; transform: translateX(-50%) scale(1); }
+@keyframes assist-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(0,209,255,0); }
+    50% { box-shadow: 0 0 0 6px rgba(0,209,255,.8); }
+}
+.assist-flash { outline: 3px dashed #00d1ff !important; animation: assist-pulse .5s 3; z-index: 5; }
+.hint-btn {
+    background: linear-gradient(135deg,#00d1ff,#0091c7) !important; color: #00232e !important;
+    box-shadow: 0 4px 0 #00638c !important; font-size: .85rem !important; padding: 8px 14px !important;
+}
+.hint-btn:disabled { filter: grayscale(1) brightness(.7); box-shadow: 0 2px 0 #333 !important; }
+.record-flash { animation: sparkle 0.6s 3; display: inline-block; }
+.result-card {
+    position: fixed; inset: 0; background: rgba(0,0,0,.88); z-index: 2500;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    animation: spawn-pop .25s ease-out both;
+}
+.result-card .panel {
+    background: #14141f; border: 2px solid var(--accent); border-radius: 20px;
+    padding: 28px 30px; width: 86%; max-width: 340px; text-align: center; box-shadow: 0 10px 40px rgba(0,255,136,.25);
+}
+.result-card h2 { margin: 0 0 4px; font-size: 1.6rem; color: var(--accent); }
+.result-card .big { font-size: 2.6rem; font-weight: 900; margin: 6px 0; }
+.result-card .sub { color: #9aa; font-size: .95rem; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+<span id="current-name-display" style="display:none;"></span>
+
+<section id="view-profile" class="view active">
+    <div style="width: 100%; display: flex; justify-content: flex-end; padding: 10px 20px; flex-shrink: 0;">
+        <button onclick="toggleLanguage()" class="btn-sm" style="margin:0;">ZH / EN</button>
+    </div>
+
+    <h2 class="lang" data-zh="鼠鼠訓練營" data-en="Mouse Academy">鼠鼠訓練營</h2>
+    
+    <div style="width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 10px;">
+        <div class="rule-card" style="margin: 0; border-left-color: #FFCC00;">
+            <strong class="lang" data-zh="⚡ 遊戲一：捕鼠特攻" data-en="⚡ Game 1: Rat Catcher">⚡ 遊戲一：捕鼠特攻</strong><br>
+            <span class="lang" data-zh="當 🐀 出現時立即點擊！避開其他小動物。限時內捉到🐀越多越高分。" data-en="Tap 🐀 instantly! Avoid other animals. It gets faster!">當 🐀 出現時立即點擊！避開其他小動物。限時內捉到🐀越多越高分。</span>
+        </div>
+        
+        <div class="rule-card" style="margin: 0; border-left-color: #4CAF50;">
+            <strong class="lang" data-zh="🧠 遊戲二：老鼠迷蹤" data-en="🧠 Game 2: Mouse Maze">🧠 遊戲二：老鼠迷蹤</strong><br>
+            <span class="lang" data-zh="記住 🐀 走過的路徑，等牠消失後，依序點擊格子還原逃走路線。" data-en="Watch the path of 🐀. Tap the cells in order after it vanishes.">記住 🐀 走過的路徑，等牠消失後，依序點擊格子還原逃走路線。</span>
+        </div>
+    </div>
+    <button onclick="openHallOfFame()" style="background:none; border:1px solid var(--accent); color:var(--accent); padding: 8px 20px; font-size: 0.9rem; margin-top: 10px;">
+    🏆 <span class="lang" data-zh="查看榮譽榜" data-en="View Rankings">查看榮譽榜</span>
+    </button>
+
+    <button id="main-start-btn" onclick="showUserSelection()" style="width: 80%; max-width: 300px; margin-top: 25px; padding: 20px; font-size: 1.5rem; box-shadow: 0 0 15px var(--accent);">
+        🚀 <span class="lang" data-zh="開始訓練" data-en="Start Training">開始訓練</span>
+    </button>
+
+    <div id="user-selection-area" style="display: none; width: 100%; flex-direction: column; align-items: center; animation: pulse 0.3s;">
+        <div style="margin-top: 20px; color: var(--accent); font-weight: bold;">
+            <span class="lang" data-zh="請選擇或新增學員" data-en="Select or Add Player">請選擇或新增學員</span>
+        </div>
+        
+        <div id="user-list-container" style="width: 100%; margin-top: 10px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; max-height: 25vh;">
+            </div>
+
+        <div style="margin-top: 10px; background: #111; padding: 12px; border-radius: 15px; border: 1px dashed #555; flex-shrink: 0;">
+            <input type="text" id="name-input" placeholder="Name..." style="padding: 10px; font-size: 1rem; width: 120px; border-radius: 8px; border: none; background: #222; color: #fff;">
+            <button onclick="handleCreateUser()" class="lang" data-zh="新增" data-en="Add">新增</button>
+        </div>
+    </div>
+</section>
+
+
+<div id="game-picker-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:2000; flex-direction:column; align-items:center; justify-content:center; gap:15px;">
+    <h3 class="lang" data-zh="請選擇訓練項目" data-en="Select Training">請選擇訓練項目</h3>
+    <button onclick="pickGame(1)" style="width: 80%; max-width: 280px; padding: 25px; font-size: 1.4rem; margin-bottom: 15px;">⚡ 捕鼠特攻</button>
+    <button onclick="pickGame(2)" style="width: 80%; max-width: 280px; padding: 25px; font-size: 1.4rem; background: #4CAF50; color: #fff;">🧠 老鼠迷蹤</button>
+    <button onclick="closePicker()" style="background:none; color:#999; text-decoration:underline; margin-top:20px;">取消 / Cancel</button>
+</div>
+
+<div id="g2-retry-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+    <div style="background:#222; padding:30px; border-radius:20px; border:2px solid #4CAF50; width:85%; max-width:320px;">
+        <h3 id="g2-retry-msg" class="lang" data-zh="出錯了！" data-en="Wrong move!">出錯了！</h3>
+        <p class="lang" data-zh="扣減一個心心繼續遊戲？" data-en="Use 1 heart to retry?">扣減一個心心繼續遊戲？</p>
+        <div style="font-size: 2rem; margin: 15px 0;" id="g2-modal-lives">❤️❤️❤️</div>
+        <button onclick="handleG2Retry(true)" style="width:100%; background:#4CAF50; color:white; margin-bottom:10px;">是 / Yes</button>
+        <button onclick="handleG2Retry(false)" style="width:100%; background:#555; color:white;">否 / No</button>
+    </div>
+</div>
+
+<section id="view-leaderboard" class="view">
+    <div style="width: 100%; display: flex; justify-content: space-between; padding: 10px 20px;">
+        <button onclick="showView('profile')" class="btn-sm" style="background:#444; color:#fff;">⬅️ <span class="lang" data-zh="返回" data-en="Back">返回</span></button>
+        <h2 class="lang" data-zh="🏆 榮譽榜" data-en="🏆 Hall of Fame" style="margin:0; color:var(--accent);">🏆 榮譽榜</h2>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button id="rank-tab-g1" onclick="renderLeaderboard(1)" class="btn-sm" style="flex:1;">⚡ Catch</button>
+        <button id="rank-tab-g2" onclick="renderLeaderboard(2)" class="btn-sm" style="flex:1; background:#444;">🧠 Maze</button>
+    </div>
+
+    <div id="leaderboard-list" style="width: 95%; max-width: 400px; display: flex; flex-direction: column; gap: 8px;">
+        </div>
+</section>
+
+
+<section id="view-game1" class="view">
+    <div style="width: 95%; background: #1A1A1A; border: 2px solid var(--accent); padding: 12px; border-radius: 12px; margin-bottom: 10px;">
+        <div class="lang" data-zh="⚡ 捉到 🐀 加 10 分，其他扣 5 分！" data-en="⚡ 🐀 +10 pts, Others -5 pts!" style="font-size: 1.4rem; font-weight: bold; color: var(--accent); line-height: 1.2;">
+            ⚡ 捉到 🐀 加 10 分，其他扣 5 分！
+        </div>
+        
+        <div style="margin: 8px 0; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.1rem; color: #4CAF50;">
+            <input type="checkbox" id="g1-elderly-chk" style="width: 20px; height: 20px;">
+            <label for="g1-elderly-chk">🐢 長輩模式 (速度較慢)</label>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 1.2rem; font-weight: bold;">
+            <span style="color: #FF4444;">⏱️ <span id="g1-timer">45</span>s</span>
+            <span>🏆 Best: <span id="g1-best">0</span></span>
+            <span style="color: #FFFF00;">⭐ <span id="g1-score">0</span></span>
+        </div>
+    </div>
+    
+
+
+    <div id="g1-grid" class="game-grid"></div>
+
+    <div style="width: 95%; margin-top: 10px; background: #111; padding: 8px; border-radius: 10px; min-height: 100px; text-align: left; border: 1px solid #333;">
+        <div style="font-size: 0.85rem; color: #888;">CATCHED / 捕獲 🐀:</div>
+        <div id="g1-collection-mice" style="font-size: 1.4rem; min-height: 1.6rem; margin-bottom: 5px; word-break: break-all;"></div>
+        <div style="font-size: 0.85rem; color: #888;">MISS / 誤點:</div>
+        <div id="g1-collection-others" style="font-size: 1.4rem; min-height: 1.6rem; opacity: 0.5; word-break: break-all;"></div>
+    </div>
+
+    <button onclick="quitGame()" style="margin-top: 8px; background: #222; color: #888; font-size: 0.9rem;">放棄結束 / Quit</button>
+</section>
+
+
+
+<section id="view-game2" class="view">
+    <div class="ui-card">
+        <h2 style="color: var(--accent); margin: 0 0 8px 0; font-size: 1.3rem; text-shadow: 0 0 10px rgba(0,255,136,0.4);" 
+            class="lang" data-zh="👉 送老鼠去吃芝士 🧀" data-en="👉 Help Mouse Get Cheese 🧀">
+            👉 送老鼠去吃芝士 🧀
+        </h2>
+        
+        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 10px;">
+            <div class="badge" style="border: 1px solid #00ff88;">
+                <div style="width:10px; height:10px; background:#00ff88; border-radius:2px;"></div>
+                <span class="lang" data-zh="正確" data-en="Correct">正確</span>
+            </div>
+            <div class="badge" style="border: 1px solid #ffcc00;">
+                <div style="width:10px; height:10px; background:#ffcc00; border-radius:2px;"></div>
+                <span class="lang" data-zh="順序錯" data-en="Order">順序錯</span>
+            </div>
+            <div class="badge" style="border: 1px solid #ff4444;">
+                <div style="width:10px; height:10px; background:#ff4444; border-radius:2px;"></div>
+                <span class="lang" data-zh="錯誤" data-en="Wrong">錯誤</span>
+            </div>
+        </div>
+
+        <div id="g2-hint" style="color: #00d1ff; font-weight: bold; font-size: 0.95rem; margin-bottom: 8px;">🧀 Loading...</div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px;">
+    <div style="font-size: 0.9rem; color: #fff; display: flex; gap: 15px;">
+        <div>
+            <span class="lang" data-zh="關卡:" data-en="Level:">關卡:</span> 
+            <span id="g2-level-display" style="color: var(--accent); font-weight: bold;">1</span>
+        </div>
+        <div>
+            <span class="lang" data-zh="步數:" data-en="Steps:">步數:</span> 
+            <span id="g2-total-steps" style="color: var(--accent); font-weight: bold;">0</span>
+        </div>
+    </div>
+    <div id="g2-lives-display" style="font-size: 1.1rem; letter-spacing: 2px;">❤️❤️❤️❤️❤️</div>
+</div>
+    </div>
+
+    <div id="g2-grid" class="game-grid"></div>
+
+    <div style="margin-top: 12px; display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.4); padding: 8px 15px; border-radius: 20px;">
+        <span style="font-size: 0.8rem; color: #aaa;" class="lang" data-zh="速度" data-en="Speed">速度</span>
+        <input type="range" id="g2-speed-range" min="200" max="1100" value="600" style="width: 100px; accent-color: var(--accent);">
+        <button onclick="quitGame()" style="background: none; border: 1px solid #444; color: #888; border-radius: 6px; padding: 2px 10px; font-size: 0.8rem;">Exit</button>
+    </div>
+</section>
+
+<script>
+/* --- 核心邏輯與用戶管理 --- */
+let appState = { lang: 'zh', users: JSON.parse(localStorage.getItem('mouse_final_v16') || '[]'), g1Active: false, currentUserId: null };// Add this to track who is playing
+
+const decoys = ['🐹', '🐰', '🐥', '🐱', '🐶'];
+
+function toggleLanguage() {
+    appState.lang = appState.lang === 'zh' ? 'en' : 'zh';
+    document.querySelectorAll('.lang').forEach(el => { el.innerText = el.getAttribute(`data-${appState.lang}`); });
+}
+
+function showView(id) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(`view-${id}`).classList.add('active');
+    appState.g1Active = (id === 'game1');
+    
+    // Reset selection area when returning to profile
+    if (id === 'profile') {
+        document.getElementById('user-selection-area').style.display = 'none';
+        document.getElementById('main-start-btn').style.display = 'block';
+    }
+}
+
+function showUserSelection() {
+    document.getElementById('main-start-btn').style.display = 'none';
+    document.getElementById('user-selection-area').style.display = 'flex';
+    refreshUserList();
+}
+
+function refreshUserList() {
+    const container = document.getElementById('user-list-container');
+    if (appState.users.length === 0) {
+        container.innerHTML = `<div style="color:#666; margin:10px;" class="lang" data-zh="目前沒有學員" data-en="No users found">目前沒有學員</div>`;
+        return;
+    }
+    container.innerHTML = appState.users.map((u, i) => `
+        <div class="profile-item">
+            <span style="font-weight:bold; font-size:1.1rem; color:#FFF;">👤 ${u.name}</span>
+            <div>
+                <button onclick="editUser(${i})" class="btn-sm btn-edit">✏️</button>
+                <button onclick="deleteUser(${i})" class="btn-sm btn-delete">🗑️</button>
+                <button onclick="openPicker(${i})" class="btn-sm" style="background:#FFCC00; color:#000;">▶️ GO 進入遊戲</button>
+            </div>
+        </div>
+    `).join('');
+    // Re-apply language translation to new elements
+    document.querySelectorAll('.lang').forEach(el => { el.innerText = el.getAttribute(`data-${appState.lang}`); });
+}
+
+function handleCreateUser() {
+    const input = document.getElementById('name-input');
+    if (!input.value.trim()) return;
+    // Add g2Steps: 0 to the initial object
+    appState.users.push({ name: input.value.trim(), g1Best: 0, g2Level: 1, g2Steps: 0 });
+    saveAndRefresh();
+    input.value = '';
+}
+
+function editUser(i) {
+    const n = prompt("修改名字 / Edit Name:", appState.users[i].name);
+    if (n && n.trim()) { appState.users[i].name = n.trim(); saveAndRefresh(); }
+}
+
+function deleteUser(i) {
+    if (confirm("確定刪除？ Delete?")) { appState.users.splice(i, 1); saveAndRefresh(); }
+}
+
+function saveAndRefresh() {
+    localStorage.setItem('mouse_final_v16', JSON.stringify(appState.users));
+    refreshUserList();
+}
+
+/* --- 彈窗選擇 --- */
+function openPicker(i) {
+    appState.currentUserId=i; // Remember which user was clicked
+    document.getElementById('current-name-display').innerText = appState.users[i].name;
+    document.getElementById('game-picker-modal').style.display = 'flex';
+}
+function closePicker() { document.getElementById('game-picker-modal').style.display = 'none'; }
+function pickGame(n) { closePicker(); n === 1 ? initGame1() : initGame2(); }
+
+/* --- 🛠️ 遊戲 1：45秒進階邏輯 --- */
+let g1Data = { 
+    score: 0, 
+    gridSize: 5, 
+    timer: null, 
+    timeLeft: 45, // 設定為 45 秒
+    gameClock: null,
+    historyMice: "",
+    historyOthers: ""
+};
+
+/* --- 🛠️ 修正後的 Game 1 啟動邏輯 --- */
+async function initGame1() {
+    // A. 數據與 UI 重置
+    g1Data.score = 0;
+    g1Data.gridSize = 5;
+    g1Data.historyMice = "";
+    g1Data.historyOthers = "";
+    
+    const currentName = document.getElementById('current-name-display').innerText;
+    const currentUser = appState.users.find(u => u.name === currentName);
+    document.getElementById('g1-best').innerText = currentUser?.g1Best || 0;
+    
+    document.getElementById('g1-score').innerText = "0";
+    document.getElementById('g1-collection-mice').innerText = "";
+    document.getElementById('g1-collection-others').innerText = "";
+
+    // B. 設定時間模式（處理 180s 或 45s）
+    const isElderlyMode = document.getElementById('g1-elderly-chk')?.checked;
+    g1Data.timeLeft = isElderlyMode ? 180 : 45;
+    document.getElementById('g1-timer').innerText = g1Data.timeLeft;
+    
+    // C. 切換視圖
+    showView('game1');
+    
+    // D. 執行 3, 2, 1 倒數
+    const grid = document.getElementById('g1-grid');
+    grid.innerHTML = ''; 
+    
+    const startMsg = isElderlyMode ? "180秒內捉老鼠" : "45秒內捉老鼠";
+
+    grid.innerHTML = `<div style="grid-column: 1/-1; grid-row: 1/-1; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--accent); font-weight: bold; text-align: center;">${startMsg}</div>`;
+    await new Promise(r => setTimeout(r, 1200));
+
+    const countdowns = ['3', '2', '1', 'GO!'];
+    for (let s of countdowns) {
+        grid.innerHTML = `<div style="grid-column: 1/-1; grid-row: 1/-1; display: flex; align-items: center; justify-content: center; font-size: 5rem; color: var(--accent); font-weight: bold; animation: pulse 0.5s;">${s}</div>`;
+        await new Promise(r => setTimeout(r, 800));
+    }
+
+    // E. 正式開始
+    startG1Clock();
+    runG1Cycle();
+}
+
+
+function startG1Clock() {
+    clearInterval(g1Data.gameClock);
+    g1Data.gameClock = setInterval(() => {
+        g1Data.timeLeft--;
+        document.getElementById('g1-timer').innerText = g1Data.timeLeft;
+        if (g1Data.timeLeft <= 0) endGame1();
+    }, 1000);
+}
+
+function runG1Cycle() {
+    if (!appState.g1Active) return;
+    clearTimeout(g1Data.timer);
+    
+    const grid = document.getElementById('g1-grid');
+    document.documentElement.style.setProperty('--grid-size', g1Data.gridSize);
+    grid.innerHTML = '';
+
+    // [新增] 建立網格與點擊事件邏輯 (保持原樣)
+    for (let i=0; i<g1Data.gridSize**2; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.onclick = (e) => {
+            e.preventDefault();
+            if (!cell.innerText) return;
+            if (cell.innerText === '🐀') {
+                cell.classList.add('hit-effect');
+                g1Data.score += 10;
+                g1Data.historyMice += '🐀';
+                document.getElementById('g1-collection-mice').innerText = g1Data.historyMice;
+                if (g1Data.score > 0 && g1Data.score % 100 === 0 && g1Data.gridSize < 8) g1Data.gridSize++;
+                document.getElementById('g1-score').innerText = g1Data.score;
+                clearTimeout(g1Data.timer); 
+                setTimeout(runG1Cycle, 150);
+            } else {
+                g1Data.score = Math.max(0, g1Data.score - 5);
+                g1Data.historyOthers += cell.innerText;
+                document.getElementById('g1-collection-others').innerText = g1Data.historyOthers;
+                document.getElementById('g1-score').innerText = g1Data.score;
+                cell.classList.add('wrong');
+                setTimeout(() => cell.classList.remove('wrong'), 200);
+            }
+        };
+        grid.appendChild(cell);
+    }
+
+    // [新增] 放置老鼠與干擾物邏輯 (保持原樣)
+    const cells = grid.querySelectorAll('.cell');
+    cells[Math.floor(Math.random() * cells.length)].innerText = '🐀';
+    let decoyCount = Math.floor((g1Data.gridSize ** 2) * 0.4); // 建議調回 0.4 較平衡
+    for(let d=0; d < decoyCount; d++){
+        let idx = Math.floor(Math.random() * cells.length);
+        if(cells[idx].innerText === '') {
+            cells[idx].innerText = decoys[Math.floor(Math.random() * decoys.length)];
+        }
+    }
+
+    // --- [關鍵修改處] ---
+    // 1. 安全讀取 Checkbox 狀態，避免 null 報錯
+    const elderlyBtn = document.getElementById('g1-elderly-chk');
+    const isElderly = elderlyBtn ? elderlyBtn.checked : false; 
+
+    // 2. 根據模式計算消失速度：長輩模式 5 秒，正常模式 0.85 ~ 2 秒
+    let delay = isElderly ? 5000 : Math.max(850, 2000 - (g1Data.gridSize * 150));
+
+    // 3. 設定下一次循環
+    g1Data.timer = setTimeout(() => { 
+        if (appState.g1Active) runG1Cycle(); 
+    }, delay);
+}
+
+
+function endGame1() {
+    appState.g1Active = false;
+    clearInterval(g1Data.gameClock);
+    clearTimeout(g1Data.timer);
+    
+    const currentName = document.getElementById('current-name-display').innerText;
+    const userIdx = appState.users.findIndex(u => u.name === currentName);
+    
+    let isNewRecord = false;
+    if (userIdx !== -1) {
+        if (!appState.users[userIdx].g1Best || g1Data.score > appState.users[userIdx].g1Best) {
+            appState.users[userIdx].g1Best = g1Data.score;
+            isNewRecord = true;
+        }
+    }
+    
+    saveAndRefresh(); // 確保數據存入 localStorage
+    
+    alert(isNewRecord ? `🎊 新紀錄！總分: ${g1Data.score}` : `遊戲結束！得分: ${g1Data.score}`);
+    showView('profile');
+}
+
+
+
+/* --- 🛠️ 遊戲 2：芝士提示版核心邏輯 --- */
+let g2Data = { 
+    level: 1, size: 5, path: [], playerIdx: 0, 
+    isShowing: false, currentLevelId: 0,
+    totalSteps: 0, cheesePos: "",
+    lives: 3 // Track hearts
+};
+
+/* --- Updated Game 2 Initializer with Countdown --- */
+async function initGame2() {
+    const user = appState.users[appState.currentUserId];
+    
+    // Load progress
+    g2Data.level = user.g2Level || 1;
+    g2Data.totalSteps = user.g2Steps || 0;
+    g2Data.size = 5 + Math.floor(g2Data.level / 3);
+    if (g2Data.size > 8) g2Data.size = 8;
+    
+    g2Data.currentLevelId++; // Increment to prevent overlapping logic
+    g2Data.lives = 5; 
+
+    // Update UI
+    document.getElementById('g2-total-steps').innerText = g2Data.totalSteps;
+    document.getElementById('g2-level-display').innerText = g2Data.level;
+    document.getElementById('g2-hint').innerText = "Ready?";
+    
+    showView('game2');
+
+    // --- Countdown Sequence ---
+    const grid = document.getElementById('g2-grid');
+    document.documentElement.style.setProperty('--grid-size', g2Data.size);
+    grid.innerHTML = ''; 
+
+    // Message context
+    const startMsg = appState.lang === 'zh' ? "記住老鼠路徑" : "Watch the path";
+    grid.innerHTML = `<div style="grid-column: 1/-1; grid-row: 1/-1; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #4CAF50; font-weight: bold; text-align: center;">${startMsg}</div>`;
+    await new Promise(r => setTimeout(r, 1200));
+
+    const countdowns = ['3', '2', '1', 'GO!'];
+    for (let s of countdowns) {
+        grid.innerHTML = `<div style="grid-column: 1/-1; grid-row: 1/-1; display: flex; align-items: center; justify-content: center; font-size: 5rem; color: #4CAF50; font-weight: bold; animation: pulse 0.5s;">${s}</div>`;
+        await new Promise(r => setTimeout(r, 800));
+    }
+    // --- End Countdown ---
+
+    startG2Level();
+}
+
+async function startG2Level() {
+    const myLevelId = g2Data.currentLevelId;
+    g2Data.playerIdx = 0;
+    g2Data.isShowing = true;
+    
+    const grid = document.getElementById('g2-grid');
+    document.documentElement.style.setProperty('--grid-size', g2Data.size);
+    grid.innerHTML = '';
+    document.getElementById('g2-lives-display').innerText = "❤️".repeat(g2Data.lives) || "";
+
+    // 建立網格
+    for (let i=0; i<g2Data.size**2; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.pos = `${Math.floor(i/g2Data.size)}-${i%g2Data.size}`;
+        grid.appendChild(cell);
+    }
+
+    // 1. 生成隨機路徑
+    g2Data.path = ["0-0"];
+    let curr = {x:0, y:0};
+    const pathLength = g2Data.level + 2;
+    for (let s=0; s < pathLength; s++) {
+        let n = [{x:curr.x+1, y:curr.y}, {x:curr.x-1, y:curr.y}, {x:curr.x, y:curr.y+1}, {x:curr.x, y:curr.y-1}]
+                .filter(p => p.x>=0 && p.x<g2Data.size && p.y>=0 && p.y<g2Data.size && !g2Data.path.includes(`${p.x}-${p.y}`));
+        if (n.length === 0) break;
+        curr = n[Math.floor(Math.random()*n.length)];
+        g2Data.path.push(`${curr.x}-${curr.y}`);
+    }
+
+    // 2. 放置芝士 (尋找最後一格旁邊的空位)
+    const last = curr;
+    let neighbors = [{x:last.x+1, y:last.y}, {x:last.x-1, y:last.y}, {x:last.x, y:last.y+1}, {x:last.x, y:last.y-1}]
+                    .filter(p => p.x>=0 && p.x<g2Data.size && p.y>=0 && p.y<g2Data.size && !g2Data.path.includes(`${p.x}-${p.y}`));
+    
+    // 如果旁邊沒空位，就選最後一格路徑作為芝士位 (保底機制)
+    let cPos = neighbors.length > 0 ? neighbors[0] : last;
+    g2Data.cheesePos = `${cPos.x}-${cPos.y}`;
+    const cheeseCell = grid.querySelector(`[data-pos="${g2Data.cheesePos}"]`);
+    cheeseCell.innerText = '🧀'; // 芝士先行出現
+
+    // 3. 播放老鼠走動 (速度由 Bar 控制)
+    const speed = 1300 - document.getElementById('g2-speed-range').value;
+    document.getElementById('g2-hint').innerText = "👀 記住路線...";
+    
+    for (let p of g2Data.path) {
+        if (myLevelId !== g2Data.currentLevelId) return;
+        let t = grid.querySelector(`[data-pos="${p}"]`);
+        if(t && p !== g2Data.cheesePos) {
+            t.innerText = '🐀';
+            await new Promise(r => setTimeout(r, speed));
+            t.innerText = '';
+        }
+    }
+
+    document.getElementById('g2-hint').innerText = "👉 送老鼠去吃芝士！";
+    g2Data.isShowing = false;
+
+  // 4. Click Logic with Proximity Check & Fixed Heart Deduction
+   // 4. Revised Click Logic: Outline Colors & No Cross Emoji
+   // --- NEW STRENGTHENED INPUT LOGIC ---
+        document.querySelectorAll('#g2-grid .cell').forEach(c => {
+            c.onclick = async () => {
+                // 1. STRICT LOCK: Ignore any clicks while animations are playing
+                if (g2Data.isShowing) return;
+
+                const pos = c.dataset.pos;
+                const [clickX, clickY] = pos.split('-').map(Number);
+                let lastPos = g2Data.playerIdx === 0 ? "0-0" : g2Data.path[g2Data.playerIdx - 1];
+                const [lastX, lastY] = lastPos.split('-').map(Number);
+                const dist = Math.abs(clickX - lastX) + Math.abs(clickY - lastY);
+                
+                // Proximity Check
+                if (dist > 1 && pos !== g2Data.cheesePos) {
+                    const msg = appState.lang === 'zh' ? "鼠鼠唔識飛，行近啲啦！" : "Mouse can't fly! Get closer.";
+                    alert(msg);
+                    return;
+                }
+                
+                if (pos === g2Data.path[g2Data.playerIdx]) {
+                    // --- CORRECT PATH ---
+                    c.classList.add('path-correct');
+                    c.innerText = '🐀';
+                    g2Data.playerIdx++;
+                    g2Data.totalSteps++;
+                    document.getElementById('g2-total-steps').innerText = g2Data.totalSteps;
+
+                    if (g2Data.playerIdx === g2Data.path.length) {
+                        g2Data.isShowing = true; // Lock for victory
+                        
+                        document.getElementById('g2-hint').innerText = appState.lang === 'zh' ? "😋 成功吃到了！" : "😋 Yummy!";
+                        cheeseCell.innerText = '😋';
+
+                        // Praise Animation
+                        const phrases = appState.lang === 'zh' 
+                            ? ["直覺大師!", "步法驚人!", "鼠界威龍!", "芝士達人!", "滿分!"] 
+                            : ["LEGENDARY!", "MOUSE BOSS!", "CHEEZE WHIZ!", "UNSTOPPABLE!", "WOW!"];
+                        const praiseEl = document.createElement('div');
+                        praiseEl.className = 'praise-text';
+                        praiseEl.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+                        document.body.appendChild(praiseEl);
+                        setTimeout(() => praiseEl.remove(), 1500);
+
+                        // Save Progress
+                        g2Data.level++;
+                        const user = appState.users[appState.currentUserId];
+                        user.g2Level = g2Data.level;
+                        user.g2Steps = g2Data.totalSteps;
+                        saveAndRefresh();
+
+                        // Transition to next level
+                        setTimeout(() => {
+                            if (g2Data.level % 3 === 0 && g2Data.size < 8) g2Data.size++;
+                            if (myLevelId === g2Data.currentLevelId) startG2Level();
+                        }, 1800);
+                    }
+                } else if (pos !== g2Data.cheesePos) {
+                    // --- WRONG PATH: LOCK ENGAGED ---
+                    g2Data.isShowing = true; 
+                    
+                    const isOnPath = g2Data.path.includes(pos);
+                    c.classList.add(isOnPath ? 'path-mismatch' : 'path-wrong');
+                    c.classList.add('wrong');
+                    
+                    document.getElementById('g2-hint').innerText = appState.lang === 'zh' ? "中計了！😱" : "Trapped! 😱";
+                    
+                    grid.classList.add('grid-zoom-focus');
+                    grid.style.transform = ''; // let the trap zoom overwrite pinch scale
+                    grid.style.transformOrigin = `${(c.offsetLeft + c.offsetWidth/2)}px ${(c.offsetTop + c.offsetHeight/2)}px`;
+                    c.innerHTML = '<div class="cage-effect">🕸️<br>🐀</div>';
+
+                    if (g2Data.lives > 0) {
+                        g2Data.lives--;
+                        setTimeout(() => {
+                            document.getElementById('g2-lives-display').innerText = "❤️".repeat(g2Data.lives) || "";
+                            grid.classList.remove('grid-zoom-focus');
+                            
+                            // --- CRITICAL CLEANUP ---
+                            c.innerHTML = ''; 
+                            // This removes all mistake borders so the grid doesn't get "stuck"
+                            c.classList.remove('wrong', 'path-mismatch', 'path-wrong');
+                            
+                            document.getElementById('g2-hint').innerText = appState.lang === 'zh' ? "再試一次！" : "Try again!";
+                            
+                            // UNLOCK: Only allow clicking after everything is reset
+                            g2Data.isShowing = false;
+                        }, 1200);
+                    } else {
+                        setTimeout(() => {
+                            grid.classList.remove('grid-zoom-focus');
+                            showG2RetryModal(); 
+                        }, 1200);
+                    }
+                }
+            };
+        });
+    }
+function showG2RetryModal() {
+    const penalty = Math.floor(g2Data.totalSteps * 0.3);
+    const msg = `心心已用完！\n要扣除 30% 分數 (${penalty} 步) 換取一個心心繼續嗎？`;
+    
+    // confirm() bypasses the retry selection box
+    if (confirm(msg)) {
+        g2Data.totalSteps -= penalty;
+        g2Data.lives = 1; 
+        
+        // Update UI displays
+        document.getElementById('g2-total-steps').innerText = g2Data.totalSteps;
+        document.getElementById('g2-lives-display').innerText = "❤️"; 
+        
+        // Resume directly
+        g2Data.isShowing = false; 
+    } else {
+        alert(`遊戲結束！總步數: ${g2Data.totalSteps}`);
+        quitGame();
+    }
+}
+
+function handleG2Retry(useHeart) {
+    document.getElementById('g2-retry-modal').style.display = 'none';
+    if (useHeart && g2Data.lives > 0) {
+        g2Data.lives--;
+        document.getElementById('g2-lives-display').innerText = "❤️".repeat(g2Data.lives) || "💔";
+        // Rollback: Clear only the wrong visual, keep playerIdx the same
+        document.querySelectorAll('#g2-grid .cell.wrong').forEach(el => el.classList.remove('wrong'));
+        g2Data.isShowing = false;
+    } else {
+        alert(`遊戲結束！總步數: ${g2Data.totalSteps}`);
+        quitGame();
+    }
+}
+
+
+
+
+// 修改 quitGame 確保完全切斷 Game 2 的非同步鏈
+function quitGame() {
+    appState.g1Active = false;
+    g2Data.currentLevelId++; // 強制讓任何背景中的 startG2Level 失效
+    clearTimeout(g1Data.timer);
+    clearInterval(g1Data.gameClock);
+    showView('profile');
+}
+
+function showLeaderboard(gameType) {
+    // gameType 1: Catch Mouse (Sort by g1Best)
+    // gameType 2: Maze (Sort by g2Level)
+    
+    let sortedUsers = [...appState.users].sort((a, b) => {
+        if (gameType === 1) return (b.g1Best || 0) - (a.g1Best || 0);
+        return (b.g2Level || 1) - (a.g2Level || 1);
+    }).slice(0, 10); // Get Top 10
+
+    let html = sortedUsers.map((u, i) => `
+        <div class="rank-item ${i < 3 ? 'rank-' + (i+1) : ''}">
+            <span>${i + 1}. ${u.name}</span>
+            <span>${gameType === 1 ? u.g1Best + ' pts' : 'Lv.' + u.g2Level}</span>
+        </div>
+    `).join('');
+
+    document.getElementById('leaderboard-content').innerHTML = html;
+    document.getElementById('leaderboard-view').style.display = 'flex';
+}
+
+function renderLeaderboard(gameNum) {
+    const list = document.getElementById('leaderboard-list');
+    const tab1 = document.getElementById('rank-tab-g1');
+    const tab2 = document.getElementById('rank-tab-g2');
+
+    // Update Tab UI
+    tab1.style.background = gameNum === 1 ? 'var(--accent)' : '#444';
+    tab2.style.background = gameNum === 2 ? '#4CAF50' : '#444';
+
+    // Sort Users
+    let sorted = [...appState.users].sort((a, b) => {
+        if (gameNum === 1) return (b.g1Best || 0) - (a.g1Best || 0);
+        return (b.g2Level || 1) - (a.g2Level || 1);
+    }).slice(0, 10); // Top 10 only
+
+    list.innerHTML = sorted.map((u, i) => `
+        <div class="rank-card ${i < 3 ? 'top-' + (i + 1) : ''}">
+            <div style="display:flex; align-items:center;">
+                <span class="rank-number">${i + 1}</span>
+                <span style="font-weight:bold;">${u.name}</span>
+            </div>
+            <span style="color:var(--accent); font-weight:bold;">
+                ${gameNum === 1 ? (u.g1Best || 0) + ' pts' : 'Lv.' + (u.g2Level || 1)}
+            </span>
+        </div>
+    `).join('');
+}
+
+// Helper to open the view
+function openHallOfFame() {
+    showView('leaderboard');
+    renderLeaderboard(1); // Default to Game 1
+}
+
+
+window.onload = () => { refreshUserList(); };
+
+/* ===== v3 coaching layer: art sync, records, encouragement, assists ===== */
+(function () {
+    // -- 1. keep data-k in sync so CSS art matches cell content
+    function syncCell(el) {
+        if (!el.classList || !el.classList.contains('cell')) return;
+        const k = el.innerText.trim();
+        const last = k ? [...k].pop() : '';
+        if (last) el.dataset.k = last; else delete el.dataset.k;
+    }
+    const gridObs = new MutationObserver(muts => {
+        for (const m of muts) {
+            syncCell(m.target.parentElement || m.target);
+            if (m.target.classList && m.target.classList.contains('cell')) syncCell(m.target);
+        }
+    });
+    const hook = setInterval(() => {
+        const g1 = document.getElementById('g1-grid'), g2 = document.getElementById('g2-grid');
+        if (!g1 || !g2) return;
+        gridObs.observe(g1, { childList: true, subtree: true, characterData: true });
+        gridObs.observe(g2, { childList: true, subtree: true, characterData: true });
+        document.querySelectorAll('#g1-grid .cell, #g2-grid .cell').forEach(syncCell);
+        clearInterval(hook);
+    }, 300);
+
+    // -- 2. banner + result modal
+    let bannerEl;
+    function banner(text, warn) {
+        if (!bannerEl) { bannerEl = document.createElement('div'); bannerEl.className = 'coach-banner'; document.body.appendChild(bannerEl); }
+        (warn ? bannerEl.classList.add('warn') : bannerEl.classList.remove('warn'));
+        bannerEl.textContent = text;
+        bannerEl.classList.add('show');
+        clearTimeout(banner.t);
+        banner.t = setTimeout(() => bannerEl.classList.remove('show'), 1700);
+    }
+    function resultCard(title, big, sub, btnText, onOk) {
+        document.querySelectorAll('.result-card').forEach(e => e.remove());
+        const c = document.createElement('div'); c.className = 'result-card';
+        c.innerHTML = `<div class="panel"><h2>${title}</h2><div class="big">${big}</div><div class="sub">${sub}</div></div><button id="rc-ok">${btnText}</button>`;
+        document.body.appendChild(c);
+        document.getElementById('rc-ok').onclick = () => { c.remove(); onOk && onOk(); };
+    }
+
+    // -- 3. wording
+    const W = {
+        praiseZh: ['直覺大師!', '步法驚人!', '鼠界威龍!', '芝士達人!', '滿分!', '記憶力驚人!'],
+        praiseEn: ['LEGENDARY!', 'MOUSE BOSS!', 'CHEESE WHIZ!', 'UNSTOPPABLE!', 'PERFECT!', 'MEMORY MASTER!'],
+        streakZh: n => `🔥 ${n} 連擊!`, streakEn: n => `🔥 ${n} STREAK!`,
+        newRecZh: '🎊 新個人紀錄!', newRecEn: '🎊 NEW PERSONAL BEST!',
+        keepZh: ['距離最佳紀錄只差一點, 再來一次!', '你的記憶正在進步, 繼續!', '失誤沒關係, 老鼠也在學!', '深呼吸, 節奏才是關鍵!'],
+        keepEn: ['So close to your best — go again!', 'Your memory is improving!', 'Misses are how mice learn!', 'Breathe — rhythm is the key!'],
+    };
+    const rnd = a => a[Math.floor(Math.random() * a.length)];
+    const isEn = () => appState.lang === 'en';
+
+    // -- 4. G1: streaks + live record line
+    let g1Last = 0, g1Streak = 0;
+    setInterval(() => {
+        if (!appState.g1Active) { g1Last = g1Data.score; return; }
+        const s = g1Data.score;
+        if (s > g1Last) {
+            g1Streak++;
+            if (g1Streak >= 4) banner(isEn() ? W.streakEn(g1Streak) : W.streakZh(g1Streak));
+        } else if (s < g1Last) g1Streak = 0;
+        g1Last = s;
+        const u = appState.users[appState.currentUserId];
+        if (u && u.g1Best && s > u.g1Best && !g1Data.recShown) {
+            g1Data.recShown = true;
+            banner(isEn() ? W.newRecEn : W.newRecZh);
+        }
+    }, 200);
+
+    // patch endGame1: styled result instead of alert
+    const nativeAlert = window.alert;
+    const oldEndGame1 = window.endGame1;
+    window.endGame1 = function () {
+        window.alert = m => window.__lastAlert = m;
+        try { oldEndGame1(); } finally { window.alert = nativeAlert; }
+        const u = appState.users[appState.currentUserId];
+        const a = window.__lastAlert || '';
+        const isRec = a.includes('新紀錄') || a.includes('New');
+        const delta = u && u.g1Best != null ? `個人最佳: ${u.g1Best} 分` : '';
+        const sub = (isRec ? '超神了! 你剛剛刷新了自己的紀錄!<br>' + (isEn() ? delta : delta) :
+            (delta ? `個人最佳: ${u.g1Best} 分<br>` : '') + rnd(isEn() ? W.keepEn : W.keepZh)) +
+            `<br><br>🏅 累計訓練: ${appState.users.length} 位學員`;
+        resultCard(isRec ? (isEn() ? 'NEW BEST!' : '新個人紀錄!') : (isEn() ? 'Training Complete' : '訓練完畢'),
+            g1Data.score + (isEn() ? ' pts' : ' 分'), sub, isEn() ? 'Back to Academy' : '返回訓練營');
+        g1Data.recShown = false;
+        g1Streak = 0;
+    };
+
+    // -- 5. G2: records, win/loss encouragement, auto-assist
+    const oldWinConfirm = null;
+    let g2LastIdx = 0, g2LastLives = 99, g2LastLevel = 0, g2HintLeft = 3;
+    setInterval(() => {
+        if (document.querySelector('#view-game2') && !document.querySelector('#view-game2').classList.contains('active')) {
+            g2LastLives = g2Data.lives; g2LastLevel = g2Data.level; return;
+        }
+        const active = document.querySelector('.view.active');
+        if (active && active.id === 'view-game2') {
+            // win → level up
+            if (g2Data.level > g2LastLevel && g2LastLevel > 0) {
+                const u = appState.users[appState.currentUserId];
+                u.g2BestLevel = Math.max(u.g2BestLevel || 0, g2Data.level - 1);
+                g2HintLeft = 3;
+                if (g2Data.level - 1 === u.g2BestLevel && g2Data.level > 2) banner(isEn() ? W.newRecEn : W.newRecZh);
+            }
+            // wrong tap → encouragement + auto reveal next correct cell
+            if (g2Data.lives < g2LastLives) {
+                banner(rnd(isEn() ? W.keepEn : W.keepZh), true);
+                setTimeout(() => {
+                    if (!g2Data.isShowing && g2Data.path[g2Data.playerIdx]) {
+                        const c = document.querySelector(`#g2-grid .cell[data-pos="${g2Data.path[g2Data.playerIdx]}"]`);
+                        if (c) { c.classList.add('assist-flash'); setTimeout(() => c.classList.remove('assist-flash'), 1600); }
+                    }
+                }, 1400);
+            }
+            g2LastLives = g2Data.lives; g2LastLevel = g2Data.level;
+        }
+        g2LastIdx = g2Data.playerIdx;
+    }, 250);
+
+    // hint button
+    let hintBtn;
+    const hintHook = setInterval(() => {
+        const bar = document.querySelector('#view-game2 div[style*="align-items: center"] [onclick="quitGame()"]')?.parentElement;
+        if (!bar || document.getElementById('g2-hint-btn')) return;
+        hintBtn = document.createElement('button');
+        hintBtn.id = 'g2-hint-btn'; hintBtn.className = 'hint-btn';
+        hintBtn.onclick = useHint;
+        bar.insertBefore(hintBtn, bar.firstChild);
+        clearInterval(hintHook);
+    }, 400);
+    function updateHintBtn() {
+        if (!hintBtn) return;
+        const zh = !isEn();
+        hintBtn.textContent = zh ? `💡 提示 x${g2HintLeft}${g2HintLeft === 0 ? ' -5步' : ''}` : `💡 Hint x${g2HintLeft}${g2HintLeft === 0 ? ' (-5 steps)' : ''}`;
+    }
+    setInterval(updateHintBtn, 400);
+    function useHint() {
+        if (g2Data.isShowing || !g2Data.path.length) return;
+        if (g2HintLeft <= 0) {
+            if (g2Data.totalSteps < 5) { banner(isEn() ? 'Not enough steps!' : '步數不足!', true); return; }
+            g2Data.totalSteps -= 5;
+            document.getElementById('g2-total-steps').innerText = g2Data.totalSteps;
+        } else g2HintLeft--;
+        const cells = [g2Data.path[g2Data.playerIdx], g2Data.path[g2Data.playerIdx + 1]].filter(Boolean);
+        cells.forEach((p, i) => setTimeout(() => {
+            const c = document.querySelector(`#g2-grid .cell[data-pos="${p}"]`);
+            if (c) { c.classList.add('assist-flash'); setTimeout(() => c.classList.remove('assist-flash'), 1500); }
+        }, i * 900));
+    }
+
+    // patch G2 game-over alert → result card
+    const nativeConfirm = window.confirm;
+    const oldG2Retry = window.handleG2Retry;
+    window.handleG2Retry = function (useHeart) {
+        window.alert = m => window.__lastG2Alert = m;
+        try { oldG2Retry(useHeart); } finally { window.alert = nativeAlert; }
+        const u = appState.users[appState.currentUserId];
+        const ga = window.__lastG2Alert || '';
+        if (ga) {
+            const bestStepsLv = u ? `最高關卡: Lv.${u.g2BestLevel || u.g2Level || 1}` : '';
+            resultCard(isEn() ? 'Memory Training Complete' : '記憶訓練結束',
+                g2Data.totalSteps + (isEn() ? ' steps' : ' 步'),
+                `${bestStepsLv}<br><br>${rnd(isEn() ? W.keepEn : W.keepZh)}<br>關卡越高, 記憶越強 — 休息一下再挑戰!`,
+                isEn() ? 'Back to Academy' : '返回訓練營');
+            window.__lastG2Alert = null;
+        }
+    };
+
+    // patch heart-trade modal: custom card with two real buttons (no blocking confirm)
+    const oldG2Modal = window.showG2RetryModal;
+    window.showG2RetryModal = function () {
+        const penalty = Math.floor(g2Data.totalSteps * 0.3);
+        const zh = !isEn();
+        document.querySelectorAll('.result-card').forEach(e => e.remove());
+        const c = document.createElement('div'); c.className = 'result-card';
+        c.innerHTML = `<div class="panel"><h2>${zh ? '💔 心心用完了!' : '💔 Out of hearts!'}</h2>
+            <div class="big" style="font-size:1.4rem">${zh ? `用 ${penalty} 步 換 1 個心心繼續?` : `Trade ${penalty} steps for 1 heart?`}</div>
+            <div class="sub">${zh ? '總步數紀錄會被扣減' : 'Your total steps record will be reduced'}</div></div>
+            <button id="rc-trade" style="background:#4CAF50;color:#fff;">${zh ? `繼續 (−${penalty} 步)` : `Continue (−${penalty} steps)`}</button>
+            <button id="rc-end" style="background:#555;color:#fff;">${zh ? '結束訓練' : 'End Training'}</button>`;
+        document.body.appendChild(c);
+        document.getElementById('rc-trade').onclick = () => { c.remove(); window.confirm = () => true; try { oldG2Modal(); } finally { window.confirm = nativeConfirm; } };
+        document.getElementById('rc-end').onclick = () => { c.remove(); window.confirm = () => false; try { oldG2Modal(); } finally { window.confirm = nativeConfirm; } };
+    };
+})();
+document.addEventListener('contextmenu', e => e.preventDefault());
+let lastTap = 0;
+document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTap < 300) e.preventDefault();
+    lastTap = now;
+}, { passive: false });
+
+/* --- Pinch zoom (2 fingers, game views only) --- */
+const pinch = { active: false, dist: 0, scale: 1, ox: 0, oy: 0 };
+document.addEventListener('touchstart', (e) => {
+    const view = document.querySelector('.view.active');
+    const grid = view && (view.querySelector('.game-grid') || document.querySelector('.praise-text'));
+    if (e.touches.length === 2 && view && view.querySelector('.game-grid')) {
+        pinch.active = true;
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        pinch.dist = Math.hypot(dx, dy) || 1;
+        pinch.startScale = parseFloat(grid.dataset.pinchScale || 1);
+        pinch.ox = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        pinch.oy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        grid.style.transformOrigin = `${pinch.ox + grid.offsetLeft}px ${pinch.oy + grid.offsetTop}px`;
+        e.preventDefault();
+    }
+}, { passive: false });
+document.addEventListener('touchmove', (e) => {
+    if (!pinch.active || e.touches.length < 2) return;
+    const view = document.querySelector('.view.active');
+    const grid = view.querySelector('.game-grid'); if (!grid) return;
+    e.preventDefault();
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const s = Math.min(2, Math.max(0.8, pinch.startScale * (Math.hypot(dx, dy) / pinch.dist)));
+    pinch.scale = s;
+    grid.dataset.pinchScale = s;
+    grid.style.transform = `scale(${s})`;
+    /* keep transition none while pinching */
+    grid.style.transition = 'none';
+}, { passive: false });
+document.addEventListener('touchend', (e) => {
+    if (pinch.active && e.touches.length < 2) {
+        pinch.active = false;
+        const view = document.querySelector('.view.active');
+        const grid = view && view.querySelector('.game-grid');
+        if (grid && pinch.scale) {
+            grid.style.transition = 'transform 0.25s ease-out';
+            if (pinch.scale < 1) { grid.dataset.pinchScale = 1; grid.style.transform = 'scale(1)'; }
+        }
+    }
+}, { passive: false });
+
+</script>
+
+<style id="theme-v3">
+/* ===== v3 theme: warm scenes, no plain black ===== */
+body {
+    background:
+        radial-gradient(120% 60% at 50% 0%, rgba(255,196,102,.10), transparent 60%),
+        radial-gradient(circle at 50% 30%, #2c1f14 0%, #171008 70%, #100b06 100%) !important;
+}
+
+/* --- Game 1: kitchen scene (warm wall + tiled floor board) --- */
+#view-game1.active {
+    background:
+        linear-gradient(180deg, rgba(255,214,150,.16), transparent 42%),
+        radial-gradient(ellipse 140% 70% at 50% -10%, #7a4d26 0%, #3d2817 62%, #241708 100%) !important;
+}
+#view-game1 .ui-card, #view-game1 > div:not(.game-grid) {
+    background: rgba(58,36,18,.72) !important;
+    border-color: rgba(255,214,150,.35) !important;
+    text-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+#view-game1 .game-grid {
+    border: 7px solid #8a5a33 !important;
+    border-radius: 18px !important;
+    background-color: #e8d7b6 !important;
+    box-shadow: 0 26px 60px rgba(0,0,0,.55), inset 0 0 0 2px rgba(255,246,222,.35) !important;
+}
+#view-game1 .game-grid .cell {
+    border: 2px solid #cdb489 !important;
+    background-size: 74% !important;
+}
+#view-game1 .game-grid .cell:nth-child(odd)  { background-color: #f4e9d2 !important; }
+#view-game1 .game-grid .cell:nth-child(even) { background-color: #e6d3ac !important; }
+#view-game1 .game-grid .cell:not([data-k]) {
+    background-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,.35) 0 6%, transparent 7%), radial-gradient(circle at 70% 65%, rgba(160,120,70,.18) 0 8%, transparent 9%) !important;
+}
+/* spray-speckled tile texture to avoid flatness */
+
+/* --- Game 2: backyard lawn scene (fence light + grass board) --- */
+#view-game2.active {
+    background:
+        radial-gradient(ellipse 120% 55% at 50% -8%, rgba(186,232,120,.22), transparent 55%),
+        radial-gradient(ellipse 120% 55% at 50% 110%, rgba(0,0,0,.45), transparent 60%),
+        radial-gradient(circle at 50% 30%, #42632c 0%, #24371a 70%, #14200e 100%) !important;
+}
+#view-game2 .ui-card, #view-game2 > div:not(.game-grid) {
+    background: rgba(34,48,20,.72) !important;
+    border-color: rgba(186,232,120,.35) !important;
+    text-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+#view-game2 .game-grid, #view-game2 .ui-card + .game-grid {
+    border: 7px solid #6f4f2a !important;
+    border-radius: 18px !important;
+    background-color: #79a45c !important;
+    box-shadow: 0 26px 60px rgba(0,0,0,.55), inset 0 0 0 2px rgba(230,255,200,.30) !important;
+}
+#view-game2 .game-grid .cell {
+    border: 2px solid #6b8f4c !important;
+    background-size: 74% !important;
+}
+#view-game2 .game-grid .cell:nth-child(odd)  { background-color: #a4c77c !important; }
+#view-game2 .game-grid .cell:nth-child(even) { background-color: #96bb6b !important; }
+#view-game2 .game-grid .cell:not([data-k]) {
+    background-image: radial-gradient(ellipse 40% 18% at 50% 30%, rgba(255,255,255,.20), transparent 70%) !important;
+}
+
+/* countdown / intro text readable on both scenes */
+#view-game1 .game-grid .grid-msg, #view-game2 .game-grid .grid-msg,
+#view-game1 .game-grid > div, #view-game2 .game-grid > div {
+    color: #3a2814 !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,.25);
+}
+#view-game2 .game-grid > div { color: #2a3d14 !important; }
+
+/* Уч Highlight states keep contrast on ground colors */
+#view-game2 .path-correct { background: rgba(46,125,50,.35) !important; }
+#view-game2 .path-mismatch { background: rgba(255,204,0,.30) !important; }
+#view-game2 .path-wrong { background: rgba(211,47,47,.30) !important; }
+#view-game2 .cell.path-correct { border-color: #2e7d32 !important; }
+
+/* drop shadows stay subtle on light ground */
+#view-game1 .cell:not(:empty)::after, #view-game2 .cell:not(:empty)::after { background: rgba(60,40,15,.22) !important; }
+
+/* --- Menu: snapshot hero cards instead of text rows --- */
+#view-profile.active, #view-leaderboard.active {
+    background:
+        radial-gradient(130% 55% at 50% -6%, rgba(255,255,255,.09), transparent 55%),
+        radial-gradient(circle at 50% 20%, #33261a 0%, #1d1409 65%, #120c05 100%) !important;
+}
+.rule-card {
+    position: relative; min-height: 168px; overflow: hidden;
+    border-radius: 18px !important; border: 1px solid rgba(255,214,150,.4) !important;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding-top: 96px !important; box-shadow: 0 14px 36px rgba(0,0,0,.45);
+}
+.rule-card::before { content: ""; position: absolute; inset: 0; z-index: -1; }
+.rule-card:nth-of-type(1)::before {
+    background:
+        linear-gradient(180deg, rgba(20,12,5,.15) 0%, rgba(15,9,4,.88) 78%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 160'%3E%3Crect width='300' height='160' fill='%23c9955c'/%3E%3Crect y='104' width='300' height='56' fill='%23e8d7b6'/%3E%3Cpath d='M0 104h300v3H0z' fill='%23a97b47'/%3E%3Crect x='36' y='20' width='64' height='44' rx='8' fill='%23f8f0dc' stroke='%23a97b47' stroke-width='3'/%3E%3Crect x='200' y='16' width='84' height='88' rx='8' fill='%239a6a3b' stroke='%236f4f2a' stroke-width='3'/%3E%3Crect x='200' y='56' width='84' height='4' fill='%236f4f2a'/%3E%3Ccircle cx='222' cy='40' r='9' fill='%23fff'/%3E%3Ccircle cx='248' cy='40' r='9' fill='%23ffb84d'/%3E%3Cellipse cx='150' cy='96' rx='26' ry='10' fill='%23c9955c'/%3E%3Cellipse cx='170' cy='60' rx='6' ry='2' fill='%237a4d26'/%3E%3C/svg%3E") center / cover no-repeat;
+}
+.rule-card:nth-of-type(2)::before {
+    background:
+        linear-gradient(180deg, rgba(20,12,5,.15) 0%, rgba(15,9,4,.88) 78%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 160'%3E%3Crect width='300' height='160' fill='%2379a45c'/%3E%3Cpath d='M0 0h300v26H0z' fill='%236f4f2a'/%3E%3Cpath d='M0 6h300M0 18h300' stroke='%235b3f20' stroke-width='2'/%3E%3Cpath d='M14 26v134M44 26v134M74 26v134' stroke='%236f4f2a' stroke-width='6' opacity='.5'/%3E%3Cpath d='M28 26v40h16M60 96v40h-16' stroke='%235b3f20' stroke-width='5' fill='none' opacity='.7'/%3E%3Cpath d='M92 132q30-18 60-14t44 -10' stroke='%23efe3cb' stroke-width='8' fill='none' stroke-dasharray='14 10' stroke-linecap='round'/%3E%3C/svg%3E") center / cover no-repeat;
+}
+.rule-card .lang { text-shadow: 0 1px 3px rgba(0,0,0,.85); }
+.rule-card strong { font-size: 1.05rem; }
+
+/* leaderboard rows warmer */
+.rank-card { background: rgba(255,246,222,.08) !important; border: 1px solid rgba(255,214,150,.18); }
+.top-1 { background: rgba(255,215,0,.12) !important; }
+
+/* modals match new tone */
+#game-picker-modal, #g2-retry-modal { background: rgba(24,15,7,.9) !important; }
+.result-card .panel { background: #241a0e !important; border-color: #ffcf70 !important; box-shadow: 0 10px 40px rgba(255,207,112,.2) !important; }
+</style>
+
+</body>
+</html>
